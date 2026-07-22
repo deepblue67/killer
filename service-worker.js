@@ -4,7 +4,7 @@
 // ci-dessous. C'est ce qui permet au navigateur de détecter qu'une
 // nouvelle version existe et de proposer la mise à jour au joueur.
 // ---------------------------------------------------------------
-const CACHE_VERSION = '20260722210000';
+const CACHE_VERSION = '20260722210500';
 const CACHE_NAME = `killer-maison-${CACHE_VERSION}`;
 
 // Fichiers de l'application à mettre en cache pour un fonctionnement

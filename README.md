@@ -225,7 +225,10 @@ Vue d'ensemble → Défis → Réglages`
   `#tab-reglages .card > h2` uniquement — les cartes des autres onglets
   ne sont pas concernées). Le titre reste toujours visible, seul le
   contenu se masque via `#tab-reglages .card.collapsed > *:not(h2)`.
-  État non persisté : tout redevient déplié au rechargement de la page.
+  État non persisté : tout redevient déplié au rechargement de la page,
+  mais **toutes les cartes démarrent repliées par défaut** à chaque
+  chargement (classe `.collapsed` ajoutée par défaut à toutes les
+  `#tab-reglages .card` avant l'attache des écouteurs de clic).
   Le "📋 Résumé des règles" reste un contenu statique — pas de logique
   JS associée, à mettre à jour manuellement si les règles changent
   (score, zones interdites, etc.).

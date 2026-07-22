@@ -631,7 +631,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722210000';
+const APP_VERSION = '20260722210500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -2031,6 +2031,9 @@ window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
 
 // ---------- CARTES PLIABLES (onglet Réglages) ----------
+document.querySelectorAll('#tab-reglages .card').forEach(card=>{
+  card.classList.add('collapsed');
+});
 document.querySelectorAll('#tab-reglages .card > h2').forEach(h2=>{
   h2.addEventListener('click', ()=>{
     h2.closest('.card').classList.toggle('collapsed');
