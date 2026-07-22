@@ -234,6 +234,7 @@
     <h1>🔒 DOSSIER KILLER</h1>
   </header>
   <div class="status" id="statusBar"></div>
+  <div id="offlineIndicator" style="display:none;text-align:center;font-size:.72rem;color:var(--gold);margin:2px 0 8px;">📡 Mode hors-ligne — l'appli continue de fonctionner normalement</div>
 
   <nav class="tabs">
     <button data-tab="parties" class="active">🎮 Parties</button>
@@ -347,6 +348,7 @@
         <button class="btn btn-ghost" id="importBtn">Importer des données</button>
       </div>
       <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+      <div class="hint" id="lastExportDisplay" style="margin-bottom:4px;"></div>
       <div class="hint" id="syncStatus"></div>
     </div>
     <div class="card">
@@ -410,6 +412,10 @@
     <div id="noActiveGameClassement" class="hint" style="padding:0 4px;">Ouvre ou crée une partie dans l'onglet Parties.</div>
     <div id="classementTabContent" style="display:none;">
       <div class="card" id="survivorCard" style="display:none;"></div>
+      <div class="card" id="bilanCard" style="display:none;">
+        <h2>Bilan de fin de partie</h2>
+        <div id="bilanContent"></div>
+      </div>
       <div class="card">
         <h2>Classement par éliminations</h2>
         <div class="hint" style="margin-bottom:10px;">Trié par nombre d'éliminations. En cas d'égalité, celui qui a survécu le plus longtemps passe devant.</div>
@@ -466,7 +472,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722170000';
+const APP_VERSION = '20260722172000';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 
@@ -475,7 +481,7 @@ let state = {
   games: [], nextGameId: 1, nextPlayerSeq: 1,
   currentGameId: null,
   missionBank: [], nextMissionId: 0, missionBankVersion: 0,
-  theme: 'foret', pin: ''
+  theme: 'foret', pin: '', lastExportAt: null
 };
 
 const DEFAULT_MISSIONS = [
@@ -785,8 +791,8 @@ function createGame(title, rosterIds){
     ? ` ⚠️ La banque de défis cochés (${enabledCount}) est plus petite que le nombre de joueurs (${players.length}) : certains défis seront forcément réutilisés.`
     : '';
   state.games.push({
-    id:gid, title, players, targets:{}, log:[{text:`Partie « ${title} » créée avec ${players.length} joueur(s), chacun avec un défi différent.${warning}`, ts:nowStr()}],
-    eliminationCounter:0, started:false, createdAt:Date.now()
+    id:gid, title, players, targets:{}, log:[{text:`Partie « ${title} » créée avec ${players.length} joueur(s), chacun avec un défi différent.${warning}`, ts:nowStr(), epoch:Date.now()}],
+    eliminationCounter:0, started:false, eliminationEvents:[], createdAt:Date.now()
   });
   state.currentGameId = gid;
   save(); render();
@@ -803,7 +809,7 @@ function removePlayerFromGame(game, playerId){
   const p = gameById(game, playerId);
   if(!p) return;
   game.players = game.players.filter(x=>x.id!==playerId);
-  game.log.unshift({text:`${p.name} a été retiré(e) de la partie « ${game.title} » avant son lancement.`, ts:nowStr()});
+  game.log.unshift({text:`${p.name} a été retiré(e) de la partie « ${game.title} » avant son lancement.`, ts:nowStr(), epoch:Date.now()});
   save(); render();
 }
 
@@ -818,7 +824,7 @@ function addPlayerToGame(game, rosterId){
   const newPlayer = { id:'p'+state.nextPlayerSeq++, name:r.name, alive:true, mission:randomMission(usedMissions), kills:0 };
   if(!game.started){
     game.players.push(newPlayer);
-    game.log.unshift({text:`${r.name} rejoint la partie « ${game.title} ».${warning}`, ts:nowStr()});
+    game.log.unshift({text:`${r.name} rejoint la partie « ${game.title} ».${warning}`, ts:nowStr(), epoch:Date.now()});
   } else {
     const aliveIds = gameAlive(game).map(p=>p.id);
     if(aliveIds.length === 0){ game.players.push(newPlayer); save(); render(); return; }
@@ -827,7 +833,7 @@ function addPlayerToGame(game, rosterId){
     game.players.push(newPlayer);
     game.targets[newPlayer.id] = b;
     game.targets[a] = newPlayer.id;
-    game.log.unshift({text:`${r.name} rejoint la partie en cours et est inséré(e) dans la chaîne.${warning}`, ts:nowStr()});
+    game.log.unshift({text:`${r.name} rejoint la partie en cours et est inséré(e) dans la chaîne.${warning}`, ts:nowStr(), epoch:Date.now()});
   }
   save(); render();
 }
@@ -844,7 +850,7 @@ function startGame(game){
   }
   game.started = true;
   game.lastElimination = null;
-  game.log.unshift({text:`La partie « ${game.title} » commence avec ${ps.length} joueurs. Que la traque commence !`, ts:nowStr()});
+  game.log.unshift({text:`La partie « ${game.title} » commence avec ${ps.length} joueurs. Que la traque commence !`, ts:nowStr(), epoch:Date.now()});
   save(); render();
 }
 
@@ -862,7 +868,8 @@ function restartGame(game){
   game.eliminationCounter = 0;
   game.started = false;
   game.lastElimination = null;
-  game.log.unshift({text:`La partie « ${game.title} » a été arrêtée et réinitialisée (tout le monde revit, nouveaux défis tirés). Prête à être relancée.`, ts:nowStr()});
+  game.eliminationEvents = [];
+  game.log.unshift({text:`La partie « ${game.title} » a été arrêtée et réinitialisée (tout le monde revit, nouveaux défis tirés). Prête à être relancée.`, ts:nowStr(), epoch:Date.now()});
   save(); render();
 }
 
@@ -872,6 +879,7 @@ function eliminate(game, killerId){
   const killer = gameById(game,killerId), victim = gameById(game,victimId);
   const usedMission = killer.mission;
   const victimTargetBefore = game.targets[victimId];
+  const eventEpoch = Date.now();
   game.lastElimination = {
     killerId, victimId,
     killerMissionBefore: usedMission,
@@ -879,6 +887,8 @@ function eliminate(game, killerId){
     victimTargetBefore,
     eliminationCounterBefore: game.eliminationCounter
   };
+  if(!game.eliminationEvents) game.eliminationEvents = [];
+  game.eliminationEvents.push({mission: usedMission, epoch: eventEpoch, killerName: killer.name, victimName: victim.name});
   victim.lastTargetId = victimTargetBefore;
   game.targets[killerId] = victimTargetBefore;
   delete game.targets[victimId];
@@ -886,7 +896,7 @@ function eliminate(game, killerId){
   victim.eliminatedAt = ++game.eliminationCounter;
   killer.kills = (killer.kills||0) + 1;
   killer.mission = victim.mission;
-  game.log.unshift({text:`${killer.name} élimine ${victim.name} avec le défi « ${usedMission} » et récupère une nouvelle mission : « ${killer.mission} ». (${killer.kills} élimination${killer.kills>1?'s':''} pour ${killer.name})`, ts:nowStr()});
+  game.log.unshift({text:`${killer.name} élimine ${victim.name} avec le défi « ${usedMission} » et récupère une nouvelle mission : « ${killer.mission} ». (${killer.kills} élimination${killer.kills>1?'s':''} pour ${killer.name})`, ts:nowStr(), epoch:eventEpoch});
   save(); render();
 }
 
@@ -904,7 +914,8 @@ function undoLastElimination(game){
   game.targets[snap.killerId] = snap.victimId;
   game.targets[snap.victimId] = snap.victimTargetBefore;
   game.eliminationCounter = snap.eliminationCounterBefore;
-  game.log.unshift({text:`Annulation : l'élimination de ${victim.name} par ${killer.name} a été annulée.`, ts:nowStr()});
+  if(game.eliminationEvents && game.eliminationEvents.length) game.eliminationEvents.pop();
+  game.log.unshift({text:`Annulation : l'élimination de ${victim.name} par ${killer.name} a été annulée.`, ts:nowStr(), epoch:Date.now()});
   game.lastElimination = null;
   save(); render();
 }
@@ -999,6 +1010,18 @@ function renderPartiesTab(game){
   }).join('');
 }
 
+function formatRelativeTime(epoch){
+  if(!epoch) return 'jamais';
+  const diffMs = Date.now() - epoch;
+  const diffMin = Math.floor(diffMs/60000);
+  if(diffMin < 1) return "à l'instant";
+  if(diffMin < 60) return `il y a ${diffMin} min`;
+  const diffH = Math.floor(diffMin/60);
+  if(diffH < 24) return `il y a ${diffH} h`;
+  const diffD = Math.floor(diffH/24);
+  return `il y a ${diffD} j`;
+}
+
 function renderReglagesTab(){
   const rosterMgmtList = document.getElementById('rosterMgmtList');
   document.getElementById('emptyRoster').style.display = state.roster.length ? 'none' : 'block';
@@ -1023,6 +1046,8 @@ function renderReglagesTab(){
   document.getElementById('pinStatus').textContent = state.pin
     ? "Code défini. La vue d'ensemble est protégée."
     : "Aucun code défini — la vue d'ensemble est accessible sans protection.";
+
+  document.getElementById('lastExportDisplay').textContent = `Dernier export : ${formatRelativeTime(state.lastExportAt)}`;
 
   document.getElementById('versionDisplay').textContent = `Version ${APP_VERSION}`;
 }
@@ -1118,6 +1143,57 @@ function renderClassementTab(game){
   } else {
     survivorCard.style.display = 'none';
   }
+
+  const bilanCard = document.getElementById('bilanCard');
+  if(gameStatus(game) === 'done'){
+    const bilan = computeBilan(game);
+    if(bilan){
+      bilanCard.style.display = 'block';
+      document.getElementById('bilanContent').innerHTML = `
+        ${bilan.topMission ? `<div class="recap-item">🎯 Défi le plus utilisé : <span class="rtarget">« ${bilan.topMission} »</span> (${bilan.topCount} fois)</div>` : ''}
+        ${bilan.fastest ? `<div class="recap-item">⚡ Élimination la plus rapide : <span class="rtarget">${bilan.fastest.killerName} → ${bilan.fastest.victimName}</span>, ${formatDuration(bilan.fastest.delta)} après la précédente</div>` : ''}
+        <div class="recap-item">🕵️ Survivant le plus discret : <span class="rtarget">${bilan.discreet.name}</span> (${bilan.discreet.kills} élimination${bilan.discreet.kills>1?'s':''})</div>
+      `;
+    } else {
+      bilanCard.style.display = 'none';
+    }
+  } else {
+    bilanCard.style.display = 'none';
+  }
+}
+
+function formatDuration(ms){
+  const totalSec = Math.round(ms/1000);
+  if(totalSec < 60) return `${totalSec} s`;
+  const min = Math.floor(totalSec/60), sec = totalSec%60;
+  return sec ? `${min} min ${sec}s` : `${min} min`;
+}
+
+function computeBilan(game){
+  const events = game.eliminationEvents || [];
+  let topMission = null, topCount = 0;
+  if(events.length){
+    const freq = {};
+    events.forEach(e=>{ freq[e.mission] = (freq[e.mission]||0)+1; });
+    Object.entries(freq).forEach(([m,c])=>{ if(c>topCount){ topCount=c; topMission=m; } });
+  }
+  let fastest = null;
+  for(let i=1;i<events.length;i++){
+    const delta = events[i].epoch - events[i-1].epoch;
+    if(fastest===null || delta < fastest.delta){
+      fastest = {delta, killerName:events[i].killerName, victimName:events[i].victimName};
+    }
+  }
+  let discreet = null;
+  game.players.forEach(p=>{
+    const kills = p.kills||0;
+    const survival = p.alive ? Infinity : (p.eliminatedAt||0);
+    if(discreet===null || kills < discreet.kills || (kills===discreet.kills && survival>discreet.survival)){
+      discreet = {name:p.name, kills, survival};
+    }
+  });
+  if(!topMission && !discreet) return null;
+  return {topMission, topCount, fastest, discreet};
 }
 
 function renderJournalTab(game){
@@ -1391,6 +1467,8 @@ document.getElementById('clearPinBtn').addEventListener('click', ()=>{
 
 // Réglages — synchronisation des données
 document.getElementById('exportDataBtn').addEventListener('click', async ()=>{
+  state.lastExportAt = Date.now();
+  save();
   const dataStr = JSON.stringify(state, null, 2);
   const stamp = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'').replace(/(\d{8})(\d{4})/,'$1_$2');
   const filename = `dossier-killer-sync-${stamp}.json`;
@@ -1401,6 +1479,7 @@ document.getElementById('exportDataBtn').addEventListener('click', async ()=>{
     if(navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file], title:'Dossier Killer — export', text:'Export des données Dossier Killer'});
       syncStatus.textContent = 'Export partagé.';
+      render();
       return;
     }
   }catch(err){
@@ -1412,6 +1491,7 @@ document.getElementById('exportDataBtn').addEventListener('click', async ()=>{
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
   syncStatus.textContent = `Fichier téléchargé : ${filename}`;
+  render();
 });
 
 document.getElementById('importBtn').addEventListener('click', ()=>{
@@ -1497,6 +1577,16 @@ function showUpdateBanner(reg){
   });
   document.body.appendChild(banner);
 }
+
+// ---------- INDICATEUR HORS-LIGNE ----------
+function updateOnlineStatus(){
+  const el = document.getElementById('offlineIndicator');
+  if(!el) return;
+  el.style.display = navigator.onLine ? 'none' : 'block';
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
 
 load();
 </script>
