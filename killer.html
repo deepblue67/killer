@@ -340,6 +340,16 @@
       <button class="btn btn-ghost" id="clearPinBtn" style="margin-top:8px;">Retirer le code</button>
     </div>
     <div class="card">
+      <h2>Synchronisation des données</h2>
+      <div class="hint" style="margin-bottom:10px;">Exporte toutes les données de cet appareil (roster, parties, banque de défis, thème, code PIN) dans un fichier, à envoyer par mail, messagerie ou AirDrop vers ton autre appareil. Importer un fichier remplace entièrement les données de l'appareil qui importe.</div>
+      <div class="row">
+        <button class="btn btn-primary" id="exportDataBtn">Exporter mes données</button>
+        <button class="btn btn-ghost" id="importBtn">Importer des données</button>
+      </div>
+      <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+      <div class="hint" id="syncStatus"></div>
+    </div>
+    <div class="card">
       <h2>Version</h2>
       <div class="hint" id="versionDisplay"></div>
     </div>
@@ -451,7 +461,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722163000';
+const APP_VERSION = '20260722164500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 
@@ -1265,6 +1275,64 @@ document.getElementById('clearPinBtn').addEventListener('click', ()=>{
     state.pin = '';
     save(); render();
   }
+});
+
+// Réglages — synchronisation des données
+document.getElementById('exportDataBtn').addEventListener('click', async ()=>{
+  const dataStr = JSON.stringify(state, null, 2);
+  const stamp = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'').replace(/(\d{8})(\d{4})/,'$1_$2');
+  const filename = `dossier-killer-sync-${stamp}.json`;
+  const blob = new Blob([dataStr], {type:'application/json'});
+  const syncStatus = document.getElementById('syncStatus');
+  try{
+    const file = new File([blob], filename, {type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:'Dossier Killer — export', text:'Export des données Dossier Killer'});
+      syncStatus.textContent = 'Export partagé.';
+      return;
+    }
+  }catch(err){
+    // annulé ou non supporté : on retombe sur le téléchargement classique
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  syncStatus.textContent = `Fichier téléchargé : ${filename}`;
+});
+
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  document.getElementById('importFileInput').click();
+});
+document.getElementById('importFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const syncStatus = document.getElementById('syncStatus');
+    try{
+      const imported = JSON.parse(ev.target.result);
+      if(!imported || !Array.isArray(imported.games) || !Array.isArray(imported.roster) || !Array.isArray(imported.missionBank)){
+        alert("Fichier invalide : ce n'est pas un export Dossier Killer reconnu.");
+        return;
+      }
+      if(confirm('Importer ce fichier va REMPLACER toutes les données de cet appareil (roster, parties, défis, thème, code PIN). Continuer ?')){
+        state = imported;
+        if(!state.theme) state.theme = 'foret';
+        if(state.pin === undefined) state.pin = '';
+        vueUnlocked = false;
+        applyTheme(state.theme);
+        save();
+        render();
+        syncStatus.textContent = 'Import terminé : les données ont été remplacées.';
+      }
+    }catch(err){
+      alert('Impossible de lire ce fichier (JSON invalide).');
+    }
+    document.getElementById('importFileInput').value = '';
+  };
+  reader.readAsText(file);
 });
 
 // Vue d'ensemble — déverrouillage
