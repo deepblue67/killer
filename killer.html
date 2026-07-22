@@ -154,18 +154,38 @@
     background:var(--pine-deep);
     color:var(--kraft);
     border:2px dashed var(--gold);
-    border-radius:10px;
-    padding:16px;
+    border-radius:12px;
+    padding:24px 20px;
     margin-top:12px;
     text-align:center;
   }
+  .mission-card .label{
+    font-family:'Inter',sans-serif;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    color:var(--gold);
+    opacity:.85;
+    margin:0 0 4px;
+  }
   .mission-card .target{
     font-family:'Special Elite',monospace;
-    font-size:1.3rem;
+    font-size:2rem;
     color:var(--gold);
-    margin:6px 0;
+    margin:0 0 18px;
+    line-height:1.25;
+    word-break:break-word;
   }
-  .mission-card .bonus{font-size:.85rem;margin-top:6px;line-height:1.4;}
+  .mission-card .divider{
+    border-top:1px dashed rgba(232,220,196,.3);
+    margin:0 0 16px;
+  }
+  .mission-card .bonus{
+    font-size:1.2rem;
+    font-weight:600;
+    line-height:1.5;
+    margin:0;
+  }
   .stamp{
     display:inline-block;
     font-family:'Special Elite',monospace;
@@ -301,7 +321,7 @@
       </details>
       <details class="guide-item">
         <summary>4. Ma mission</summary>
-        <p>Chaque joueur vient consulter sa cible et son défi ici, en privé — l'affichage se masque tout seul après 7 secondes. Fais tourner le téléphone ! Si un défi semble trop compliqué, tu peux lui en tirer un autre depuis cet onglet — ça lui coûte 1 point.</p>
+        <p>Chaque joueur vient consulter sa cible et son défi ici, en privé — l'affichage se masque tout seul après 10 secondes. Fais tourner le téléphone ! Si un défi semble trop compliqué, le joueur peut cliquer sur "Je change de défi" pour en tirer un autre — ça lui coûte 1 point.</p>
       </details>
       <details class="guide-item">
         <summary>5. Valider une élimination</summary>
@@ -426,7 +446,7 @@
           <button class="btn btn-ghost" id="revealBtn">Afficher</button>
         </div>
         <div id="missionResult"></div>
-        <button class="btn btn-danger" id="swapMissionBtn" style="margin-top:12px;">Ce défi est trop compliqué → en tirer un autre (-1 point)</button>
+        <button class="btn btn-danger" id="swapMissionBtn" style="margin-top:12px;">Je change de défi (-1 point)</button>
       </div>
     </div>
   </section>
@@ -524,7 +544,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722184500';
+const APP_VERSION = '20260722190000';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -1607,13 +1627,15 @@ document.getElementById('revealBtn').addEventListener('click', ()=>{
   if(!target){ box.innerHTML = `<div class="hint">Pas de mission trouvée (la partie a-t-elle été lancée ?).</div>`; return; }
   box.innerHTML = `
     <div class="mission-card">
-      <div>Ta cible, ${p.name}...</div>
+      <div class="label">🎯 Ta cible</div>
       <div class="target">${target.name}</div>
-      <div class="bonus">🎯 Ta mission : ${p.mission || ''}</div>
+      <div class="divider"></div>
+      <div class="label">📜 Ta mission</div>
+      <div class="bonus">${p.mission || ''}</div>
     </div>
   `;
   clearTimeout(window._hideTimer);
-  window._hideTimer = setTimeout(()=>{ box.innerHTML = '<div class="hint">Mission masquée. Redemande à ton tour !</div>'; }, 7000);
+  window._hideTimer = setTimeout(()=>{ box.innerHTML = '<div class="hint">Mission masquée. Redemande à ton tour !</div>'; }, 10000);
 });
 document.getElementById('swapMissionBtn').addEventListener('click', ()=>{
   const game = currentGame();
