@@ -201,6 +201,17 @@
   .theme-dots{display:flex;gap:4px;margin-bottom:6px;}
   .theme-dot{width:16px;height:16px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15);}
   .badge-active{display:inline-block;font-size:.68rem;font-weight:700;color:var(--gold);margin-left:6px;}
+  .guide-item{border-bottom:1px solid rgba(43,36,32,.12);padding:8px 0;}
+  .guide-item:last-child{border-bottom:none;}
+  .guide-item summary{cursor:pointer;font-weight:700;font-size:.88rem;list-style:none;}
+  .guide-item summary::-webkit-details-marker{display:none;}
+  .guide-item summary::before{content:"▸ ";color:var(--pine);}
+  .guide-item[open] summary::before{content:"▾ ";}
+  .guide-item p{margin:8px 0 2px;font-size:.83rem;line-height:1.45;color:rgba(43,36,32,.8);}
+  .recap-item{border-bottom:1px solid rgba(43,36,32,.12);padding:9px 0;font-size:.85rem;line-height:1.4;}
+  .recap-item:last-child{border-bottom:none;}
+  .recap-item .rname{font-weight:700;}
+  .recap-item .rtarget{color:var(--blood);font-weight:600;}
 </style>
 </head>
 <body>
@@ -223,12 +234,15 @@
   <section id="tab-parties">
     <div class="card">
       <h2>Créer une nouvelle partie</h2>
-      <div class="row">
-        <input type="text" id="gameTitle" placeholder="Titre de la partie (ex: Semaine 1)">
+      <div class="hint" id="blockedCreateHint" style="display:none;"></div>
+      <div id="createGameForm">
+        <div class="row">
+          <input type="text" id="gameTitle" placeholder="Titre de la partie (ex: Semaine 1)">
+        </div>
+        <div class="hint" id="rosterEmptyHint" style="display:none;">Ton roster est vide. Va d'abord ajouter des joueurs dans l'onglet Réglages.</div>
+        <ul class="clist" id="rosterCheckList"></ul>
+        <button class="btn btn-primary" id="createGameBtn" style="margin-top:12px;">Créer la partie</button>
       </div>
-      <div class="hint" id="rosterEmptyHint" style="display:none;">Ton roster est vide. Va d'abord ajouter des joueurs dans l'onglet Réglages.</div>
-      <ul class="clist" id="rosterCheckList"></ul>
-      <button class="btn btn-primary" id="createGameBtn" style="margin-top:12px;">Créer la partie</button>
     </div>
 
     <div class="card" id="activeGameCard" style="display:none;">
@@ -250,6 +264,41 @@
   </section>
 
   <section id="tab-reglages" style="display:none;">
+    <div class="card">
+      <h2>Guide d'utilisation</h2>
+      <details class="guide-item">
+        <summary>1. Roster des joueurs</summary>
+        <p>Ajoute ici, une bonne fois pour toutes, tous les joueurs potentiels du séjour. C'est cette liste qui sert ensuite à composer chaque partie — pas besoin de retaper les prénoms à chaque fois.</p>
+      </details>
+      <details class="guide-item">
+        <summary>2. Banque de défis</summary>
+        <p>Chaque joueur reçoit un défi tiré au hasard parmi ceux cochés. Tu peux en ajouter, en modifier (✎) ou en décocher sans les supprimer, pour composer ta propre sélection avant le séjour.</p>
+      </details>
+      <details class="guide-item">
+        <summary>3. Créer et gérer une partie</summary>
+        <p>Dans l'onglet Parties, donne un titre à la partie et coche les joueurs du roster qui y participent dès le départ. Une seule partie peut être « en cours » à la fois. Une fois créée, tu peux encore ajouter des retardataires (jour 4, jour 7...) depuis le roster : ils sont insérés automatiquement dans la chaîne de missions si la partie a déjà démarré. Clique sur « Lancer la partie » quand tout le monde est prêt (3 joueurs minimum).</p>
+      </details>
+      <details class="guide-item">
+        <summary>4. Ma mission</summary>
+        <p>Chaque joueur vient consulter sa cible et son défi ici, en privé — l'affichage se masque tout seul après 7 secondes. Fais tourner le téléphone !</p>
+      </details>
+      <details class="guide-item">
+        <summary>5. Valider une élimination</summary>
+        <p>Une fois le défi réalisé sur sa cible, le joueur vient le signaler ici. Il récupère alors automatiquement la mission de sa victime.</p>
+      </details>
+      <details class="guide-item">
+        <summary>6. Classement</summary>
+        <p>Trié par nombre d'éliminations réalisées (et non par simple survie). Le dernier survivant reçoit en plus une distinction à part, séparée du classement.</p>
+      </details>
+      <details class="guide-item">
+        <summary>7. Journal et historique</summary>
+        <p>Le journal garde une trace de tout ce qui s'est passé dans la partie. Une fois une partie terminée, tu peux la rouvrir à tout moment depuis « Mes parties » pour consulter un récapitulatif complet : qui chassait qui, avec quel défi.</p>
+      </details>
+      <details class="guide-item">
+        <summary>8. Mes données</summary>
+        <p>Tout est enregistré dans ton navigateur (roster, parties, thème). Ça reste intact d'une mise à jour à l'autre de l'application, tant que tu ouvres le même lien depuis le même appareil.</p>
+      </details>
+    </div>
     <div class="card">
       <h2>Roster des joueurs</h2>
       <div class="hint" style="margin-bottom:10px;">La liste globale de joueurs, dans laquelle tu piocheras pour créer chaque partie.</div>
@@ -329,6 +378,11 @@
   <section id="tab-journal" style="display:none;">
     <div id="noActiveGameJournal" class="hint" style="padding:0 4px;">Ouvre ou crée une partie dans l'onglet Parties.</div>
     <div id="journalTabContent" style="display:none;">
+      <div class="card" id="recapCard" style="display:none;">
+        <h2>Récapitulatif complet</h2>
+        <div class="hint" style="margin-bottom:10px;">Partie terminée : plus besoin de secret, voici qui chassait qui.</div>
+        <div id="recapList"></div>
+      </div>
       <div class="card">
         <h2 id="journalGameTitle">Journal de la partie</h2>
         <div id="logList"></div>
@@ -344,7 +398,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722134130';
+const APP_VERSION = '20260722135643';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let state = {
   roster: [], nextRosterId: 1,
@@ -602,7 +656,12 @@ function gameStatus(game){
   return 'live';
 }
 
+function liveGame(){
+  return state.games.find(g=>gameStatus(g)==='live') || null;
+}
+
 function createGame(title, rosterIds){
+  if(liveGame()) return;
   title = title.trim();
   if(!title) return;
   const gid = 'g'+state.nextGameId++;
@@ -663,6 +722,7 @@ function eliminate(game, killerId){
   const victimId = game.targets[killerId];
   if(!victimId) return;
   const killer = gameById(game,killerId), victim = gameById(game,victimId);
+  victim.lastTargetId = game.targets[victimId];
   game.targets[killerId] = game.targets[victimId];
   delete game.targets[victimId];
   victim.alive = false;
@@ -696,6 +756,13 @@ function render(){
 }
 
 function renderPartiesTab(game){
+  const blocking = liveGame();
+  document.getElementById('createGameForm').style.display = blocking ? 'none' : 'block';
+  document.getElementById('blockedCreateHint').style.display = blocking ? 'block' : 'none';
+  if(blocking){
+    document.getElementById('blockedCreateHint').textContent = `Une partie est déjà en cours (« ${blocking.title} »). Termine-la ou supprime-la depuis l'onglet Journal avant d'en créer une nouvelle.`;
+  }
+
   // roster checklist for new game creation
   const rosterCheckList = document.getElementById('rosterCheckList');
   document.getElementById('rosterEmptyHint').style.display = state.roster.length ? 'none' : 'block';
@@ -862,6 +929,23 @@ function renderJournalTab(game){
   const logList = document.getElementById('logList');
   logList.innerHTML = game.log.map(l=>`<div class="log-entry"><strong>${l.ts}</strong> — ${l.text}</div>`).join('');
   document.getElementById('emptyLog').style.display = game.log.length ? 'none':'block';
+
+  const recapCard = document.getElementById('recapCard');
+  if(gameStatus(game) === 'done'){
+    recapCard.style.display = 'block';
+    const recapList = document.getElementById('recapList');
+    recapList.innerHTML = game.players.map(p=>{
+      const targetId = p.alive ? game.targets[p.id] : p.lastTargetId;
+      const target = targetId ? gameById(game, targetId) : null;
+      return `<div class="recap-item">
+        <span class="rname">${p.name}</span> ${p.alive?'🏆':'☠️'} —
+        chassait <span class="rtarget">${target ? target.name : '—'}</span><br>
+        <span class="hint" style="margin:0;">Défi : ${p.mission || '—'}</span>
+      </div>`;
+    }).join('');
+  } else {
+    recapCard.style.display = 'none';
+  }
 }
 
 // ---------- EVENTS ----------
