@@ -270,7 +270,7 @@
       <button class="btn btn-primary" id="startGameBtn" style="margin-top:10px;">Lancer la partie 🔫</button>
     </div>
 
-    <div class="card">
+    <div class="card" id="gamesCard">
       <h2>Mes parties</h2>
       <ul class="plist" id="gamesList"></ul>
       <div class="empty" id="emptyGames">Aucune partie créée pour l'instant.</div>
@@ -344,6 +344,7 @@
     </div>
     <div class="card">
       <h2>Banque de défis</h2>
+      <div class="hint" id="missionCountDisplay" style="margin-bottom:10px;"></div>
       <ul class="mlist" id="missionList"></ul>
     </div>
   </section>
@@ -413,7 +414,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722153500';
+const APP_VERSION = '20260722160800';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let state = {
   roster: [], nextRosterId: 1,
@@ -618,10 +619,13 @@ function load(){
 }
 
 // ---------- MISSION BANK ----------
-function randomMission(){
-  const pool = state.missionBank.filter(m=>m.enabled);
-  if(pool.length === 0) return "Aucun défi disponible — coche-en dans la banque de défis !";
-  return pool[Math.floor(Math.random()*pool.length)].text;
+function randomMission(excludeTexts){
+  excludeTexts = excludeTexts || [];
+  const pool = state.missionBank.filter(m=>m.enabled && !excludeTexts.includes(m.text));
+  if(pool.length > 0) return pool[Math.floor(Math.random()*pool.length)].text;
+  const fallback = state.missionBank.filter(m=>m.enabled);
+  if(fallback.length === 0) return "Aucun défi disponible — coche-en dans la banque de défis !";
+  return fallback[Math.floor(Math.random()*fallback.length)].text;
 }
 function addMissionToBank(text){
   text = text.trim();
@@ -684,12 +688,19 @@ function createGame(title, rosterIds){
   title = title.trim();
   if(!title) return;
   const gid = 'g'+state.nextGameId++;
+  const usedMissions = [];
   const players = rosterIds.map(rid=>{
     const r = state.roster.find(x=>x.id===rid);
-    return { id:'p'+state.nextPlayerSeq++, name:r.name, alive:true, mission:randomMission(), kills:0 };
+    const mission = randomMission(usedMissions);
+    usedMissions.push(mission);
+    return { id:'p'+state.nextPlayerSeq++, name:r.name, alive:true, mission, kills:0 };
   });
+  const enabledCount = state.missionBank.filter(m=>m.enabled).length;
+  const warning = enabledCount < players.length
+    ? ` ⚠️ La banque de défis cochés (${enabledCount}) est plus petite que le nombre de joueurs (${players.length}) : certains défis seront forcément réutilisés.`
+    : '';
   state.games.push({
-    id:gid, title, players, targets:{}, log:[{text:`Partie « ${title} » créée avec ${players.length} joueur(s).`, ts:nowStr()}],
+    id:gid, title, players, targets:{}, log:[{text:`Partie « ${title} » créée avec ${players.length} joueur(s), chacun avec un défi différent.${warning}`, ts:nowStr()}],
     eliminationCounter:0, started:false, createdAt:Date.now()
   });
   state.currentGameId = gid;
@@ -705,10 +716,15 @@ function deleteGame(gid){
 function addPlayerToGame(game, rosterId){
   const r = state.roster.find(x=>x.id===rosterId);
   if(!r) return;
-  const newPlayer = { id:'p'+state.nextPlayerSeq++, name:r.name, alive:true, mission:randomMission(), kills:0 };
+  const usedMissions = game.players.map(p=>p.mission);
+  const enabledCount = state.missionBank.filter(m=>m.enabled).length;
+  const warning = enabledCount <= usedMissions.length
+    ? ` ⚠️ Plus assez de défis distincts dans la banque, un défi déjà utilisé a été réattribué.`
+    : '';
+  const newPlayer = { id:'p'+state.nextPlayerSeq++, name:r.name, alive:true, mission:randomMission(usedMissions), kills:0 };
   if(!game.started){
     game.players.push(newPlayer);
-    game.log.unshift({text:`${r.name} rejoint la partie « ${game.title} ».`, ts:nowStr()});
+    game.log.unshift({text:`${r.name} rejoint la partie « ${game.title} ».${warning}`, ts:nowStr()});
   } else {
     const aliveIds = gameAlive(game).map(p=>p.id);
     if(aliveIds.length === 0){ game.players.push(newPlayer); save(); render(); return; }
@@ -717,7 +733,7 @@ function addPlayerToGame(game, rosterId){
     game.players.push(newPlayer);
     game.targets[newPlayer.id] = b;
     game.targets[a] = newPlayer.id;
-    game.log.unshift({text:`${r.name} rejoint la partie en cours et est inséré(e) dans la chaîne.`, ts:nowStr()});
+    game.log.unshift({text:`${r.name} rejoint la partie en cours et est inséré(e) dans la chaîne.${warning}`, ts:nowStr()});
   }
   save(); render();
 }
@@ -749,7 +765,7 @@ function eliminate(game, killerId){
   victim.eliminatedAt = ++game.eliminationCounter;
   killer.kills = (killer.kills||0) + 1;
   killer.mission = victim.mission;
-  game.log.unshift({text:`${killer.name} élimine ${victim.name} avec le défi « ${usedMission} » et récupère sa nouvelle mission. (${killer.kills} élimination${killer.kills>1?'s':''} pour ${killer.name})`, ts:nowStr()});
+  game.log.unshift({text:`${killer.name} élimine ${victim.name} avec le défi « ${usedMission} » et récupère une nouvelle mission : « ${killer.mission} ». (${killer.kills} élimination${killer.kills>1?'s':''} pour ${killer.name})`, ts:nowStr()});
   save(); render();
 }
 
@@ -817,6 +833,7 @@ function renderPartiesTab(game){
 
   // games list
   const gamesList = document.getElementById('gamesList');
+  document.getElementById('gamesCard').style.display = state.games.length > 1 ? 'block' : 'none';
   document.getElementById('emptyGames').style.display = state.games.length ? 'none' : 'block';
   gamesList.innerHTML = [...state.games].reverse().map(g=>{
     const status = gameStatus(g);
@@ -862,6 +879,9 @@ function renderReglagesTab(){
 }
 
 function renderDefisTab(){
+  const total = state.missionBank.length;
+  const enabled = state.missionBank.filter(m=>m.enabled).length;
+  document.getElementById('missionCountDisplay').textContent = `${enabled} défi${enabled>1?'s':''} coché${enabled>1?'s':''} sur ${total} au total.`;
   const mlist = document.getElementById('missionList');
   mlist.innerHTML = state.missionBank.map(m=>`
     <li class="${m.enabled?'':'disabled'}">
