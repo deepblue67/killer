@@ -297,7 +297,7 @@
       </details>
       <details class="guide-item">
         <summary>4. Ma mission</summary>
-        <p>Chaque joueur vient consulter sa cible et son défi ici, en privé — l'affichage se masque tout seul après 7 secondes. Fais tourner le téléphone !</p>
+        <p>Chaque joueur vient consulter sa cible et son défi ici, en privé — l'affichage se masque tout seul après 7 secondes. Fais tourner le téléphone ! Si un défi semble trop compliqué, tu peux lui en tirer un autre depuis cet onglet — ça lui coûte 1 point.</p>
       </details>
       <details class="guide-item">
         <summary>5. Valider une élimination</summary>
@@ -305,7 +305,7 @@
       </details>
       <details class="guide-item">
         <summary>6. Classement</summary>
-        <p>Trié par nombre d'éliminations réalisées (et non par simple survie). Le dernier survivant reçoit en plus une distinction à part, séparée du classement.</p>
+        <p>Trié par score : nombre d'éliminations réalisées moins le nombre de fois où le joueur a changé de défi (et non par simple survie). Le score peut être négatif. Le dernier survivant reçoit en plus une distinction à part, séparée du classement.</p>
       </details>
       <details class="guide-item">
         <summary>7. Journal et historique</summary>
@@ -384,6 +384,7 @@
           <button class="btn btn-ghost" id="revealBtn">Afficher</button>
         </div>
         <div id="missionResult"></div>
+        <button class="btn btn-danger" id="swapMissionBtn" style="margin-top:12px;">Ce défi est trop compliqué → en tirer un autre (-1 point)</button>
       </div>
     </div>
   </section>
@@ -418,7 +419,7 @@
       </div>
       <div class="card">
         <h2>Classement par éliminations</h2>
-        <div class="hint" style="margin-bottom:10px;">Trié par nombre d'éliminations. En cas d'égalité, celui qui a survécu le plus longtemps passe devant.</div>
+        <div class="hint" style="margin-bottom:10px;">Trié par score (éliminations moins les changements de défi). En cas d'égalité, celui qui a survécu le plus longtemps passe devant. Le score peut être négatif.</div>
         <ul class="plist" id="rankingList"></ul>
       </div>
     </div>
@@ -472,7 +473,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722175500';
+const APP_VERSION = '20260722181500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 
@@ -981,6 +982,18 @@ function restartGame(game){
   save(); render();
 }
 
+function swapMission(game, playerId){
+  const p = gameById(game, playerId);
+  if(!p) return;
+  const oldMission = p.mission;
+  const usedMissions = game.players.filter(x=>x.id!==playerId).map(x=>x.mission);
+  usedMissions.push(oldMission);
+  p.mission = randomMission(usedMissions);
+  p.penalties = (p.penalties||0) + 1;
+  game.log.unshift({text:`${p.name} trouve son défi trop compliqué (« ${oldMission} ») et en tire un autre : « ${p.mission} ». (-1 point, ${p.penalties} changement${p.penalties>1?'s':''} au total)`, ts:nowStr(), epoch:Date.now()});
+  save(); render();
+}
+
 function eliminate(game, killerId){
   const victimId = game.targets[killerId];
   if(!victimId) return;
@@ -1231,19 +1244,24 @@ function renderClassementTab(game){
   if(!has) return;
   const a = gameAlive(game);
   const ranked = [...game.players].sort((x,y)=>{
-    const kx = x.kills||0, ky = y.kills||0;
-    if(ky !== kx) return ky - kx;
+    const sx = (x.kills||0) - (x.penalties||0);
+    const sy = (y.kills||0) - (y.penalties||0);
+    if(sy !== sx) return sy - sx;
     const xSurv = x.alive ? Infinity : (x.eliminatedAt||0);
     const ySurv = y.alive ? Infinity : (y.eliminatedAt||0);
     return ySurv - xSurv;
   });
   const rankingList = document.getElementById('rankingList');
-  rankingList.innerHTML = ranked.map((p,i)=>`
+  rankingList.innerHTML = ranked.map((p,i)=>{
+    const score = (p.kills||0) - (p.penalties||0);
+    const detail = `${p.kills||0} élimination${(p.kills||0)>1?'s':''}${p.penalties ? ` − ${p.penalties} défi${p.penalties>1?'s':''} changé${p.penalties>1?'s':''}` : ''}`;
+    return `
     <li>
       <span>#${i+1} ${p.name}</span>
-      <span class="tag ${p.alive?'tag-alive':'tag-dead'}">${p.kills||0} élimination${(p.kills||0)>1?'s':''}${p.alive?'':' · éliminé'}</span>
+      <span class="tag ${p.alive?'tag-alive':'tag-dead'}">${score} pt${Math.abs(score)>1?'s':''} (${detail})${p.alive?'':' · éliminé'}</span>
     </li>
-  `).join('');
+  `;
+  }).join('');
   const survivorCard = document.getElementById('survivorCard');
   if(game.started && a.length === 1){
     survivorCard.style.display = 'block';
@@ -1525,6 +1543,16 @@ document.getElementById('revealBtn').addEventListener('click', ()=>{
   `;
   clearTimeout(window._hideTimer);
   window._hideTimer = setTimeout(()=>{ box.innerHTML = '<div class="hint">Mission masquée. Redemande à ton tour !</div>'; }, 7000);
+});
+document.getElementById('swapMissionBtn').addEventListener('click', ()=>{
+  const game = currentGame();
+  if(!game) return;
+  const id = document.getElementById('whoSelect').value;
+  const p = gameById(game, id);
+  if(!p) return;
+  showConfirm(`${p.name} trouve son défi trop compliqué et en tire un autre ? Cela lui coûte 1 point.`).then(ok=>{
+    if(ok) swapMission(game, id);
+  });
 });
 
 // Éliminer tab
