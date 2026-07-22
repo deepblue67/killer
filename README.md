@@ -181,8 +181,8 @@ Si la date ou le nom de l'événement changent un jour, modifier
 
 ## 5. Tour des onglets (ordre actuel de la nav)
 
-`Parties → Ma mission → Défis → Éliminer → Classement → Journal →
-Vue d'ensemble → Réglages`
+`Parties → Ma mission → Éliminer → Classement → Journal →
+Vue d'ensemble → Défis → Réglages`
 
 - **Parties** : créer une partie (titre + sélection dans le roster),
   gérer la partie "active" (ajouter/retirer des joueurs avant lancement,

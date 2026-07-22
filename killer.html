@@ -329,11 +329,11 @@
   <nav class="tabs">
     <button data-tab="parties" class="active">🎮 Parties</button>
     <button data-tab="mission">📜 Ma mission</button>
-    <button data-tab="defis">🎯 Défis</button>
     <button data-tab="eliminer">🔪 Éliminer</button>
     <button data-tab="classement">🏆 Classement</button>
     <button data-tab="journal">📖 Journal</button>
     <button data-tab="vue">🕵️ Vue d'ensemble</button>
+    <button data-tab="defis">🎯 Défis</button>
     <button data-tab="reglages">⚙️ Réglages</button>
   </nav>
 
@@ -614,7 +614,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722204000';
+const APP_VERSION = '20260722205000';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -1618,7 +1618,7 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    ['parties','mission','defis','eliminer','classement','journal','vue','reglages'].forEach(t=>{
+    ['parties','mission','eliminer','classement','journal','vue','defis','reglages'].forEach(t=>{
       document.getElementById('tab-'+t).style.display = (t===btn.dataset.tab) ? 'block' : 'none';
     });
     if(btn.dataset.tab === 'vue'){
