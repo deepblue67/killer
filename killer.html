@@ -555,7 +555,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722193500';
+const APP_VERSION = '20260722195500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -793,6 +793,20 @@ const EXTRA_MISSIONS_V3 = [
   "Fais-lui faire un petit pas de danse ridicule."
 ];
 
+const EXTRA_MISSIONS_V4 = [
+  "Demande-lui de te rapporter un glaçon du congélateur, sans expliquer pourquoi.",
+  "Fais-lui deviner ton dessert préféré.",
+  "Fais-lui te raconter le pire film qu'elle ait vu."
+];
+
+const EXTRA_MISSIONS_V5 = [
+  "Demande-lui d'éteindre puis rallumer une lumière de la maison, sans dire pourquoi.",
+  "Fais-lui inventer un nouveau surnom pour la maison où vous logez.",
+  "Fais-lui inventer une punchline pour résumer le séjour.",
+  "Fais-lui te raconter son meilleur souvenir de vacances.",
+  "Fais-lui débarrasser ton assiette après le repas."
+];
+
 const THEMES = {
   foret:     { name:"Forêt & Kraft",    pine:"#1f2e28", pineDeep:"#16211c", kraft:"#e8dcc4", kraftDark:"#dccfae", ink:"#2b2420", blood:"#a8342f", bloodDark:"#7d2723", gold:"#c9a227" },
   nuit:      { name:"Nuit étoilée",     pine:"#1b2035", pineDeep:"#12162a", kraft:"#e7e4f5", kraftDark:"#d6d2ec", ink:"#241f38", blood:"#7c4dff", bloodDark:"#5c34c9", gold:"#c9b037" },
@@ -868,10 +882,10 @@ function load(){
     if(raw){ state = JSON.parse(raw); }
   }catch(e){ /* rien en stockage, on part de zéro */ }
   if(!state.missionBank || state.missionBank.length === 0){
-    const seed = DEFAULT_MISSIONS.concat(EXTRA_MISSIONS_V2).concat(EXTRA_MISSIONS_V3);
+    const seed = DEFAULT_MISSIONS.concat(EXTRA_MISSIONS_V2).concat(EXTRA_MISSIONS_V3).concat(EXTRA_MISSIONS_V4).concat(EXTRA_MISSIONS_V5);
     state.missionBank = seed.map((text,i)=>({id:'m'+i, text, enabled:true}));
     state.nextMissionId = seed.length;
-    state.missionBankVersion = 3;
+    state.missionBankVersion = 5;
     save();
   } else {
     if((state.missionBankVersion||1) < 2){
@@ -890,8 +904,24 @@ function load(){
         }
       });
     }
-    if((state.missionBankVersion||1) < 3){
-      state.missionBankVersion = 3;
+    if((state.missionBankVersion||1) < 4){
+      EXTRA_MISSIONS_V4.forEach(text=>{
+        if(!state.missionBank.some(m=>m.text===text)){
+          const id = 'm'+(state.nextMissionId===undefined?state.missionBank.length:state.nextMissionId++);
+          state.missionBank.push({id, text, enabled:true});
+        }
+      });
+    }
+    if((state.missionBankVersion||1) < 5){
+      EXTRA_MISSIONS_V5.forEach(text=>{
+        if(!state.missionBank.some(m=>m.text===text)){
+          const id = 'm'+(state.nextMissionId===undefined?state.missionBank.length:state.nextMissionId++);
+          state.missionBank.push({id, text, enabled:true});
+        }
+      });
+    }
+    if((state.missionBankVersion||1) < 5){
+      state.missionBankVersion = 5;
       save();
     }
   }
