@@ -472,7 +472,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722172000';
+const APP_VERSION = '20260722173500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 
@@ -1281,7 +1281,7 @@ function renderVueTab(game){
   document.getElementById('vueDiagram').innerHTML = buildChainSVG(orderedPlayers);
 
   const table = document.getElementById('vueTable');
-  table.innerHTML = byName(alive).map(p=>{
+  table.innerHTML = orderedPlayers.map(p=>{
     const target = gameById(game, game.targets[p.id]);
     return `<div class="recap-item">
       <span class="rname">${p.name}</span> chasse <span class="rtarget">${target ? target.name : '—'}</span><br>
@@ -1428,7 +1428,12 @@ document.getElementById('killBtn').addEventListener('click', ()=>{
   const game = currentGame();
   if(!game) return;
   const killerId = document.getElementById('killerSelect').value;
-  eliminate(game, killerId);
+  const killer = gameById(game, killerId);
+  const victim = gameById(game, game.targets[killerId]);
+  if(!killer || !victim) return;
+  showConfirm(`Confirmer l'élimination de ${victim.name} par ${killer.name} ?`).then(ok=>{
+    if(ok) eliminate(game, killerId);
+  });
 });
 document.getElementById('undoBtn').addEventListener('click', ()=>{
   const game = currentGame();
