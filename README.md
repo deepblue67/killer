@@ -145,6 +145,31 @@ décroissant, égalité départagée par la survie la plus longue
 
 ---
 
+## 4bis. Page compte à rebours ("Poisy Beach 2026")
+
+Un clic sur le 🔒 dans le titre de l'en-tête ouvre un overlay plein écran
+(`#countdownOverlay`), pensé comme une page à partager/capturer d'écran
+avec les amis avant le séjour :
+
+- Titre "🔒 DOSSIER KILLER" / sous-titre "POISY BEACH 2026".
+- Tampon "JOUEURS ENCORE EN VIE" + le nombre réel de joueurs vivants dans
+  la partie actuellement active (`gameAlive(currentGame()).length`,
+  affiche "—" si aucune partie n'est ouverte).
+- Compte à rebours en direct (jours/heures/min/sec) jusqu'à
+  `COUNTDOWN_TARGET = new Date(2026, 7, 1, 12, 0, 0)` (samedi 1er août
+  2026, midi, heure locale de l'appareil). Mis à jour chaque seconde via
+  `setInterval`, démarré à l'ouverture et arrêté à la fermeture pour ne
+  pas tourner inutilement en arrière-plan.
+- Couleurs **volontairement figées** (hex en dur : `#16211c`, `#e8dcc4`,
+  `#a8342f`, `#c9a227`), indépendantes du thème actuellement sélectionné
+  dans Réglages — c'est un visuel de communication fixe, pas un élément
+  qui doit changer d'apparence si quelqu'un change le thème de l'appli.
+- Fermeture via le bouton ✕ (`#countdownCloseBtn`).
+
+Si la date ou le nom de l'événement changent un jour, modifier
+`COUNTDOWN_TARGET` et le texte "POISY BEACH 2026" dans le HTML de
+`#countdownOverlay`.
+
 ## 5. Tour des onglets (ordre actuel de la nav)
 
 `Parties → Ma mission → Défis → Éliminer → Classement → Journal →
