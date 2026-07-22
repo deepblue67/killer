@@ -472,7 +472,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722173500';
+const APP_VERSION = '20260722175500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 
@@ -613,6 +613,102 @@ const EXTRA_MISSIONS_V2 = [
   "Fais-lui t'apprendre un mot dans une langue qu'elle connaît et que tu ne connais pas."
 ];
 
+const EXTRA_MISSIONS_V3 = [
+  "Joue à la marelle avec elle.",
+  "Sers-lui un verre au mauvais contenu (ex: eau salée) sans qu'elle le sache.",
+  "Fais-lui boire dans le verre d'un autre invité.",
+  "Convaincs-la de souffler les bougies à la place de la personne qui fête son anniversaire.",
+  "Fais-lui faire un canular téléphonique gentil à quelqu'un présent à la soirée.",
+  "Fais-lui finir une de tes phrases.",
+  "Fais-lui croire qu'une célébrité vient à la soirée.",
+  "Raconte un cauchemar à un invité que tu ne connais pas encore bien.",
+  "Lance un clapping et fais participer au moins 5 personnes.",
+  "Dis à un fumeur « vous savez que vous gaspillez votre argent » et pars sans attendre de réponse.",
+  "Fais passer une chanson entêtante pour enfants et fais danser au moins deux personnes.",
+  "Fais une démo de breakdance, même un mouvement basique.",
+  "Mange la dernière part d'un plat sans demander aux autres.",
+  "Fais-toi complimenter par ta cible sur ton intelligence.",
+  "Fais le poirier, même contre un mur.",
+  "Fais une roue, même partielle.",
+  "Envoie un cadeau à 2€ à un invité.",
+  "Vante-toi de quelque chose que tu n'as pas fait.",
+  "Fais bâiller un invité.",
+  "Enlève tes chaussures en public.",
+  "Essaie les chaussures d'un autre invité.",
+  "Programme un réveil sur le téléphone d'un autre invité, discrètement.",
+  "Sois le/la premier(ère) à t'asseoir à table quand le repas est annoncé.",
+  "Sois le/la premier(ère) à boire un verre après l'annonce d'une boisson.",
+  "Sois le/la premier(ère) sur la piste de danse.",
+  "Défie un invité aux pompes (au moins une pompe).",
+  "Intervertis ta mission avec celle d'un autre participant sans qu'il ne s'en rende compte.",
+  "Demande à ta cible sa meilleure anecdote de voyage.",
+  "Fais-lui imiter ta démarche.",
+  "Fais-toi servir un verre par ta cible.",
+  "Glisse un mot interminable et compliqué de ton choix dans une conversation avec elle.",
+  "Fais-lui croire une fausse information et fais-la répéter à quelqu'un d'autre.",
+  "Demande-lui si elle préfère le chocolat noir ou au lait, et conteste sa réponse.",
+  "Fais-lui dire « J'adore les bananes ! » très fort.",
+  "Demande-lui l'heure et vérifie sur sa montre ou son téléphone.",
+  "Fais-lui faire une pirouette.",
+  "Fais-la rire aux éclats avec une histoire inventée.",
+  "Demande-lui un autographe, pour une raison absurde.",
+  "Fais-la se lever et s'asseoir 3 fois de suite sans raison.",
+  "Fais-lui décrire ce qu'elle a mangé au petit-déjeuner.",
+  "Fais-lui un clin d'œil appuyé sans qu'elle comprenne pourquoi.",
+  "Fais-lui dire son prénom en verlan.",
+  "Fais semblant de la connaître depuis toujours et raconte-lui un faux souvenir commun.",
+  "Demande-lui de te prêter sa veste et porte-la 5 minutes.",
+  "Demande-lui de citer un animal pour chaque lettre de l'alphabet.",
+  "Fais-lui faire une chorégraphie improvisée de 10 secondes.",
+  "Fais-toi faire un high-five par ta cible.",
+  "Fais-lui crier « Vive la fête ! » très fort.",
+  "Demande-lui si elle a déjà rencontré une célébrité.",
+  "Fais-lui imiter le cri d'un animal de la ferme.",
+  "Convaincs-la que tu as un don de voyance.",
+  "Fais-lui raconter une anecdote gênante qu'elle a vécue.",
+  "Fais-lui faire une grimace et prends-la en photo.",
+  "Fais-lui donner un surnom ridicule à un autre invité.",
+  "Fais un « face swap » entre elle et un autre invité sur ton téléphone.",
+  "Fais-lui dire « J'ai soif comme un chameau » sans aucun contexte.",
+  "Demande-lui un avis détaillé sur la décoration de la salle.",
+  "Fais-lui raconter sa première fois en cuisine.",
+  "Fais-lui le coup du « tu as quelque chose là » en lui faisant toucher son nez.",
+  "Fais-lui dessiner une fleur sur sa main.",
+  "Demande-lui son avis sur un débat absurde (ex: les chaussettes avec les sandales).",
+  "Fais-lui faire 5 jumping jacks.",
+  "Fais-lui crier le prénom de la personne la plus grande de la salle.",
+  "Fais-lui taper dans ses mains 10 fois sans s'arrêter.",
+  "Fais-lui trouver 3 objets rouges dans la pièce.",
+  "Fais-lui une blague de papa.",
+  "Fais-lui imiter le bruit d'une voiture de course.",
+  "Fais-lui faire un signe de paix avec les doigts.",
+  "Fais-lui dire « J'ai la patate ! » avec enthousiasme.",
+  "Fais-lui raconter ce qu'elle fera le week-end prochain.",
+  "Fais-lui deviner ton signe astrologique.",
+  "Demande-lui un bon conseil, sur n'importe quel sujet.",
+  "Fais-lui imaginer la suite d'un film que tu inventes.",
+  "Fais-lui dire « Je suis un génie ! » en riant.",
+  "Fais-lui faire un petit tour sur elle-même.",
+  "Fais-lui dire 3 choses qu'elle aime chez toi.",
+  "Fais-lui se pincer le nez et dire « Bonjour ! ».",
+  "Fais-lui faire une tête étonnée et la maintenir 5 secondes.",
+  "Demande-lui le nom de sa ville natale.",
+  "Fais-lui donner un surnom amusant à l'organisateur du séjour.",
+  "Demande-lui le nom de son animal de compagnie (actuel ou passé).",
+  "Fais-lui un high-five raté, volontairement.",
+  "Fais-lui raconter sa pire expérience culinaire.",
+  "Fais-lui dire « Beurk ! » à quelque chose qu'elle aime normalement.",
+  "Fais-lui faire semblant de dormir debout.",
+  "Demande-lui son avis sur la météo du lendemain.",
+  "Fais-lui une tape amicale sur l'épaule.",
+  "Fais-lui dire 3 choses qu'elle n'aime pas.",
+  "Fais-lui croire que tu as vu son double.",
+  "Fais-lui faire une révérence.",
+  "Fais-lui chanter le refrain de sa chanson préférée.",
+  "Fais-lui donner la main à 3 personnes différentes.",
+  "Fais-lui faire un petit pas de danse ridicule."
+];
+
 const THEMES = {
   foret:     { name:"Forêt & Kraft",    pine:"#1f2e28", pineDeep:"#16211c", kraft:"#e8dcc4", kraftDark:"#dccfae", ink:"#2b2420", blood:"#a8342f", bloodDark:"#7d2723", gold:"#c9a227" },
   nuit:      { name:"Nuit étoilée",     pine:"#1b2035", pineDeep:"#12162a", kraft:"#e7e4f5", kraftDark:"#d6d2ec", ink:"#241f38", blood:"#7c4dff", bloodDark:"#5c34c9", gold:"#c9b037" },
@@ -688,20 +784,32 @@ function load(){
     if(raw){ state = JSON.parse(raw); }
   }catch(e){ /* rien en stockage, on part de zéro */ }
   if(!state.missionBank || state.missionBank.length === 0){
-    const seed = DEFAULT_MISSIONS.concat(EXTRA_MISSIONS_V2);
+    const seed = DEFAULT_MISSIONS.concat(EXTRA_MISSIONS_V2).concat(EXTRA_MISSIONS_V3);
     state.missionBank = seed.map((text,i)=>({id:'m'+i, text, enabled:true}));
     state.nextMissionId = seed.length;
-    state.missionBankVersion = 2;
+    state.missionBankVersion = 3;
     save();
-  } else if((state.missionBankVersion||1) < 2){
-    EXTRA_MISSIONS_V2.forEach(text=>{
-      if(!state.missionBank.some(m=>m.text===text)){
-        const id = 'm'+(state.nextMissionId===undefined?state.missionBank.length:state.nextMissionId++);
-        state.missionBank.push({id, text, enabled:true});
-      }
-    });
-    state.missionBankVersion = 2;
-    save();
+  } else {
+    if((state.missionBankVersion||1) < 2){
+      EXTRA_MISSIONS_V2.forEach(text=>{
+        if(!state.missionBank.some(m=>m.text===text)){
+          const id = 'm'+(state.nextMissionId===undefined?state.missionBank.length:state.nextMissionId++);
+          state.missionBank.push({id, text, enabled:true});
+        }
+      });
+    }
+    if((state.missionBankVersion||1) < 3){
+      EXTRA_MISSIONS_V3.forEach(text=>{
+        if(!state.missionBank.some(m=>m.text===text)){
+          const id = 'm'+(state.nextMissionId===undefined?state.missionBank.length:state.nextMissionId++);
+          state.missionBank.push({id, text, enabled:true});
+        }
+      });
+    }
+    if((state.missionBankVersion||1) < 3){
+      state.missionBankVersion = 3;
+      save();
+    }
   }
   if(!state.theme) state.theme = 'foret';
   if(state.pin === undefined) state.pin = '';
