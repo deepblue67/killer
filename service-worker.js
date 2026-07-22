@@ -4,7 +4,7 @@
 // ci-dessous. C'est ce qui permet au navigateur de détecter qu'une
 // nouvelle version existe et de proposer la mise à jour au joueur.
 // ---------------------------------------------------------------
-const CACHE_VERSION = '20260722190000';
+const CACHE_VERSION = '20260722191500';
 const CACHE_NAME = `killer-maison-${CACHE_VERSION}`;
 
 // Fichiers de l'application à mettre en cache pour un fonctionnement
@@ -52,8 +52,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  const freshRequest = new Request(event.request, { cache: 'no-store' });
+
   event.respondWith(
-    fetch(event.request)
+    fetch(freshRequest)
       .then((networkResponse) => {
         const responseCopy = networkResponse.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseCopy)).catch(() => {});

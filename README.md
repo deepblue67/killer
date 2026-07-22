@@ -47,12 +47,33 @@ fichier principal, il faut mettre à jour ces deux références (voir section
 2. Après toute modification, **incrémenter la version** (voir section 3)
    dans `killer.html` (`APP_VERSION`) ET `service-worker.js`
    (`CACHE_VERSION`) — les deux doivent toujours être identiques.
-3. Pousser les fichiers modifiés sur GitHub.
+3. Pousser les fichiers modifiés sur GitHub. Vérifier dans Settings →
+   Pages que le déploiement a bien un ✅ récent (ça peut prendre 1-2
+   minutes après le push).
 4. Sur les appareils qui ont déjà l'app ouverte/installée : le service
    worker détecte la nouvelle version et affiche un bandeau
    *"🔄 Nouvelle version disponible"* en bas de l'écran. Un tap dessus
    recharge l'app avec la nouvelle version. Sans ce clic, l'ancienne
    version cachée continue de s'afficher.
+
+### Si la version affichée ne change pas après un déploiement
+
+1. Vérifier que le déploiement GitHub Pages est bien terminé (point 3
+   ci-dessus).
+2. Un onglet déjà ouvert ne réexécute pas son JS tant qu'il n'est pas
+   rechargé : sur iOS, il faut **fermer complètement** l'app depuis le
+   sélecteur multitâche (pas juste la mettre en arrière-plan), pas
+   seulement y revenir.
+3. Le `fetch()` du service worker force `{cache:'no-store'}` (voir
+   section 7) et l'enregistrement se fait avec `{updateViaCache:
+   'none'}` + un appel explicite à `reg.update()` au chargement et à
+   chaque retour au premier plan (`visibilitychange`) — ces deux
+   protections ont été ajoutées après un incident où la version restait
+   bloquée sur l'ancienne, probablement à cause du cache HTTP du
+   navigateur qui court-circuitait la logique "réseau d'abord". Si le
+   problème revient malgré tout, c'est probablement encore une histoire
+   de cache HTTP/CDN (GitHub Pages ou navigateur) plutôt qu'un bug de
+   l'app elle-même.
 
 ## 3. Système de version
 

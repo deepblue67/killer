@@ -544,7 +544,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722190000';
+const APP_VERSION = '20260722191500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -1803,7 +1803,11 @@ document.getElementById('journalPinInput').addEventListener('keydown', e=>{
 // ---------- SERVICE WORKER (mises à jour) ----------
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./service-worker.js').then(reg=>{
+    navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' }).then(reg=>{
+      reg.update().catch(()=>{});
+      document.addEventListener('visibilitychange', ()=>{
+        if(document.visibilityState === 'visible'){ reg.update().catch(()=>{}); }
+      });
       reg.addEventListener('updatefound', ()=>{
         const newWorker = reg.installing;
         if(!newWorker) return;
