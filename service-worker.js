@@ -4,14 +4,14 @@
 // ci-dessous. C'est ce qui permet au navigateur de détecter qu'une
 // nouvelle version existe et de proposer la mise à jour au joueur.
 // ---------------------------------------------------------------
-const CACHE_VERSION = '20260722144500';
+const CACHE_VERSION = '20260722150000';
 const CACHE_NAME = `killer-maison-${CACHE_VERSION}`;
 
 // Fichiers de l'application à mettre en cache pour un fonctionnement
 // hors-ligne. Adapte les chemins si tu renommes ou déplaces des fichiers.
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
+  './killer.html',
   './manifest.json',
   './apple-touch-icon.png',
   './favicon-32.png',
@@ -60,7 +60,7 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() =>
-        caches.match(event.request).then((cached) => cached || caches.match('./index.html'))
+        caches.match(event.request).then((cached) => cached || caches.match('./killer.html'))
       )
   );
 });
