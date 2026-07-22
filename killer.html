@@ -268,6 +268,7 @@
       </div>
       <div class="hint" id="activeGameHint"></div>
       <button class="btn btn-primary" id="startGameBtn" style="margin-top:10px;">Lancer la partie 🔫</button>
+      <button class="btn btn-danger" id="restartGameBtn" style="margin-top:10px;">Arrêter et recommencer cette partie</button>
     </div>
 
     <div class="card" id="gamesCard">
@@ -414,7 +415,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722160800';
+const APP_VERSION = '20260722161500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let state = {
   roster: [], nextRosterId: 1,
@@ -753,6 +754,23 @@ function startGame(game){
   save(); render();
 }
 
+function restartGame(game){
+  const usedMissions = [];
+  game.players.forEach(p=>{
+    p.alive = true;
+    p.kills = 0;
+    delete p.eliminatedAt;
+    delete p.lastTargetId;
+    p.mission = randomMission(usedMissions);
+    usedMissions.push(p.mission);
+  });
+  game.targets = {};
+  game.eliminationCounter = 0;
+  game.started = false;
+  game.log.unshift({text:`La partie « ${game.title} » a été arrêtée et réinitialisée (tout le monde revit, nouveaux défis tirés). Prête à être relancée.`, ts:nowStr()});
+  save(); render();
+}
+
 function eliminate(game, killerId){
   const victimId = game.targets[killerId];
   if(!victimId) return;
@@ -824,6 +842,7 @@ function renderPartiesTab(game){
     const a = gameAlive(game);
     document.getElementById('startGameBtn').style.display = game.started ? 'none' : 'inline-block';
     document.getElementById('startGameBtn').disabled = a.length < 3;
+    document.getElementById('restartGameBtn').style.display = game.started ? 'inline-block' : 'none';
     document.getElementById('activeGameHint').textContent = game.started
       ? "Partie en cours : tout nouveau joueur ajouté sera inséré automatiquement dans la chaîne de missions."
       : "Ajoute les joueurs souhaités depuis le roster, puis lance la partie (3 joueurs minimum).";
@@ -1019,6 +1038,13 @@ document.getElementById('rosterAddBtn').addEventListener('click', ()=>{
 document.getElementById('startGameBtn').addEventListener('click', ()=>{
   const game = currentGame();
   if(game) startGame(game);
+});
+document.getElementById('restartGameBtn').addEventListener('click', ()=>{
+  const game = currentGame();
+  if(!game) return;
+  if(confirm(`Arrêter la partie « ${game.title} » et la recommencer depuis le début ? Tout le monde revit, avec de nouveaux défis. L'historique déjà enregistré dans le journal est conservé.`)){
+    restartGame(game);
+  }
 });
 document.getElementById('gamesList').addEventListener('click', e=>{
   if(e.target.dataset.open){ state.currentGameId = e.target.dataset.open; save(); render(); }
