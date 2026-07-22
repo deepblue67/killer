@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dossier Killer — Maison de la Montagne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#1f2e28;
+    --pine-deep:#16211c;
+    --kraft:#e8dcc4;
+    --kraft-dark:#dccfae;
+    --ink:#2b2420;
+    --blood:#a8342f;
+    --blood-dark:#7d2723;
+    --gold:#c9a227;
+    --shadow: rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,.04), transparent 40%),
+      var(--pine);
+    color:var(--kraft);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:24px 14px 60px;
+  }
+  .app{max-width:640px;margin:0 auto;}
+  header{
+    text-align:center;
+    margin-bottom:22px;
+    border-bottom:2px dashed rgba(232,220,196,.3);
+    padding-bottom:18px;
+  }
+  header h1{
+    font-family:'Special Elite',monospace;
+    font-size:1.9rem;
+    letter-spacing:2px;
+    margin:0 0 6px;
+    color:var(--kraft);
+    text-shadow:2px 2px 0 var(--shadow);
+  }
+  header p{
+    margin:0;
+    font-size:.85rem;
+    color:rgba(232,220,196,.75);
+  }
+  .status{
+    display:flex;
+    justify-content:center;
+    gap:18px;
+    margin:14px 0 4px;
+    font-size:.8rem;
+    font-family:'Special Elite',monospace;
+    color:var(--gold);
+  }
+  nav.tabs{
+    display:flex;
+    gap:6px;
+    margin:20px 0 16px;
+    background:var(--pine-deep);
+    border-radius:10px;
+    padding:5px;
+  }
+  nav.tabs button{
+    flex:1;
+    background:transparent;
+    border:none;
+    color:rgba(232,220,196,.6);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:.78rem;
+    padding:9px 4px;
+    border-radius:7px;
+    cursor:pointer;
+    transition:.15s;
+  }
+  nav.tabs button.active{
+    background:var(--kraft);
+    color:var(--ink);
+  }
+  .card{
+    background:var(--kraft);
+    color:var(--ink);
+    border-radius:12px;
+    padding:18px;
+    margin-bottom:14px;
+    box-shadow:0 6px 18px var(--shadow);
+    position:relative;
+  }
+  .card h2{
+    font-family:'Special Elite',monospace;
+    font-size:1.05rem;
+    margin:0 0 12px;
+    letter-spacing:.5px;
+  }
+  .row{display:flex;gap:8px;margin-bottom:10px;}
+  input[type=text], select{
+    flex:1;
+    padding:10px 12px;
+    border-radius:7px;
+    border:1px solid rgba(43,36,32,.25);
+    font-family:'Inter',sans-serif;
+    font-size:.9rem;
+    background:#fff;
+    color:var(--ink);
+  }
+  button.btn{
+    padding:10px 16px;
+    border-radius:7px;
+    border:none;
+    font-weight:700;
+    font-size:.85rem;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .btn-primary{background:var(--pine);color:var(--kraft);}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-danger{background:var(--blood);color:#fff;}
+  .btn-danger:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-ghost{background:transparent;border:1px solid rgba(43,36,32,.3);color:var(--ink);}
+  ul.plist{list-style:none;margin:0;padding:0;}
+  ul.plist li{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 10px;border-bottom:1px solid rgba(43,36,32,.12);
+    font-size:.9rem;
+  }
+  ul.plist li:last-child{border-bottom:none;}
+  .tag{
+    font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:20px;
+    letter-spacing:.5px;text-transform:uppercase;
+  }
+  .tag-alive{background:var(--pine);color:var(--kraft);}
+  .tag-dead{background:var(--blood);color:#fff;}
+  .hint{font-size:.78rem;color:rgba(43,36,32,.65);margin-top:6px;line-height:1.4;}
+  .mission-card{
+    background:var(--pine-deep);
+    color:var(--kraft);
+    border:2px dashed var(--gold);
+    border-radius:10px;
+    padding:16px;
+    margin-top:12px;
+    text-align:center;
+  }
+  .mission-card .target{
+    font-family:'Special Elite',monospace;
+    font-size:1.3rem;
+    color:var(--gold);
+    margin:6px 0;
+  }
+  .mission-card .method,.mission-card .bonus{font-size:.85rem;margin-top:6px;line-height:1.4;}
+  .stamp{
+    display:inline-block;
+    font-family:'Special Elite',monospace;
+    color:var(--blood);
+    border:3px solid var(--blood);
+    padding:8px 18px;
+    transform:rotate(-6deg);
+    font-size:1.1rem;
+    border-radius:8px;
+    margin:8px 0;
+  }
+  .log-entry{
+    font-size:.82rem;padding:7px 0;border-bottom:1px solid rgba(43,36,32,.12);
+  }
+  .log-entry:last-child{border-bottom:none;}
+  .winner{
+    text-align:center;padding:20px 0;
+  }
+  .winner .stamp{font-size:1.5rem;}
+  select:disabled{opacity:.6;}
+  .empty{font-size:.85rem;color:rgba(43,36,32,.6);font-style:italic;}
+  ul.mlist{list-style:none;margin:0;padding:0;max-height:520px;overflow-y:auto;}
+  ul.mlist li{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:9px 4px;border-bottom:1px solid rgba(43,36,32,.12);
+    font-size:.87rem;line-height:1.35;
+  }
+  ul.mlist li:last-child{border-bottom:none;}
+  ul.mlist li.disabled span.mtext{opacity:.4;text-decoration:line-through;}
+  ul.mlist input[type=checkbox]{margin-top:3px;flex-shrink:0;width:17px;height:17px;accent-color:var(--pine);}
+  ul.mlist span.mtext{flex:1;}
+  ul.mlist button.mdel{
+    background:none;border:none;color:var(--blood);font-size:1.1rem;cursor:pointer;
+    padding:0 4px;flex-shrink:0;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🔒 DOSSIER KILLER</h1>
+    <p>Maison de la montagne — 9 jours, 2 maisons, une piscine, un seul survivant</p>
+  </header>
+  <div class="status" id="statusBar"></div>
+
+  <nav class="tabs">
+    <button data-tab="joueurs" class="active">Joueurs</button>
+    <button data-tab="defis">Défis</button>
+    <button data-tab="mission">Ma mission</button>
+    <button data-tab="eliminer">Éliminer</button>
+    <button data-tab="journal">Journal</button>
+  </nav>
+
+  <section id="tab-joueurs">
+    <div class="card">
+      <h2>Ajouter un joueur</h2>
+      <div class="row">
+        <input type="text" id="newName" placeholder="Prénom">
+        <button class="btn btn-primary" id="addBtn">Ajouter</button>
+      </div>
+      <div class="hint" id="addHint">Ajoute d'abord tes 13 premiers joueurs, puis lance la partie. Tu pourras ajouter les nouveaux arrivants (jour 4, jour 7) une fois la partie lancée — ils seront insérés automatiquement dans la chaîne.</div>
+    </div>
+    <div class="card">
+      <h2>Liste des joueurs</h2>
+      <ul class="plist" id="playerList"></ul>
+      <div class="empty" id="emptyMsg">Aucun joueur pour l'instant.</div>
+    </div>
+    <div class="card" id="startCard">
+      <h2>Lancer la partie</h2>
+      <div class="hint">Cela tire au sort une cible secrète pour chacun, en une seule grande chaîne (13 joueurs minimum conseillé, 3 minimum techniquement). Irréversible sans réinitialiser.</div>
+      <button class="btn btn-primary" id="startBtn" style="margin-top:10px;">Lancer la partie 🔫</button>
+    </div>
+  </section>
+
+  <section id="tab-defis" style="display:none;">
+    <div class="card">
+      <h2>Ajouter un défi</h2>
+      <div class="row">
+        <input type="text" id="newMission" placeholder="Décris le défi...">
+        <button class="btn btn-primary" id="addMissionBtn">Ajouter</button>
+      </div>
+      <div class="hint">Chaque joueur reçoit un défi tiré au hasard parmi ceux cochés ci-dessous. Décoche ceux que tu ne veux pas voir apparaître, sans les supprimer.</div>
+    </div>
+    <div class="card">
+      <h2>Banque de défis</h2>
+      <ul class="mlist" id="missionList"></ul>
+    </div>
+  </section>
+
+  <section id="tab-mission" style="display:none;">
+    <div class="card">
+      <h2>Consulter ma mission</h2>
+      <div class="hint" style="margin-bottom:10px;">⚠️ À regarder seul(e) ! Passe le téléphone en privé.</div>
+      <div class="row">
+        <select id="whoSelect"></select>
+        <button class="btn btn-ghost" id="revealBtn">Afficher</button>
+      </div>
+      <div id="missionResult"></div>
+    </div>
+  </section>
+
+  <section id="tab-eliminer" style="display:none;">
+    <div class="card">
+      <h2>Valider une élimination</h2>
+      <div class="row">
+        <select id="killerSelect"></select>
+      </div>
+      <div class="hint" id="victimHint" style="margin-bottom:10px;"></div>
+      <button class="btn btn-danger" id="killBtn" disabled>Valider l'élimination 🪦</button>
+    </div>
+    <div class="card" id="winnerCard" style="display:none;"></div>
+  </section>
+
+  <section id="tab-journal" style="display:none;">
+    <div class="card">
+      <h2>Journal de la partie</h2>
+      <div id="logList"></div>
+      <div class="empty" id="emptyLog">Rien à signaler pour l'instant.</div>
+    </div>
+    <div class="card">
+      <h2>Réinitialiser</h2>
+      <div class="hint">Efface tout et repart de zéro (nouvelle partie).</div>
+      <button class="btn btn-danger" id="resetBtn" style="margin-top:10px;">Tout effacer</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const STORAGE_KEY = 'killer-montagne-state-v1';
+let state = { players: [], targets: {}, log: [], nextId: 1, missionBank: [], nextMissionId: 0 };
+
+const DEFAULT_MISSIONS = [
+  "Fais-la chanter en utilisant un objet insolite comme micro.",
+  "Écris-lui un message rigolo dans le dos (au feutre, ça part au savon).",
+  "Dessine-lui un faux tatouage au feutre, à l'endroit de son choix.",
+  "Fais-lui écrire un poème d'au moins dix vers en l'honneur de l'organisateur du séjour.",
+  "Fais-lui réciter un extrait d'un poème de son choix.",
+  "Danse un slow avec elle.",
+  "Fais-la danser avec un autre invité.",
+  "Fais-lui mimer un objet dont tu ne trouves plus le nom.",
+  "Fais-lui deviner le nom d'un personnage connu, sans jamais lui donner la réponse.",
+  "Fais-la marcher 10 mètres avec un objet en équilibre sur la tête sans le faire tomber.",
+  "Fais-lui imiter la voix d'un personnage connu (dessin animé, film...).",
+  "Fais-lui imiter la voix d'un autre invité.",
+  "Fais-lui imiter la gestuelle d'un animal.",
+  "Convaincs-la que tu es le fils ou la fille d'une célébrité.",
+  "Glisse un objet de ton choix dans sa poche sans qu'elle s'en aperçoive.",
+  "Fais-lui tenir un balai en équilibre sur la main pendant au moins 15 secondes.",
+  "Porte son verre pendant que tu lui parles, sans qu'elle le remarque.",
+  "Fais-lui faire un lacet (le sien ou celui d'un autre).",
+  "Sers-lui un verre trois fois de suite, il faut qu'elle les boive.",
+  "Fais-la s'asseoir sur une éponge mouillée.",
+  "Raconte-lui une blague et elle doit obligatoirement rire (un sourire ne compte pas).",
+  "Demande-lui de raconter une blague, et ne ris pas.",
+  "Mets-la au défi de ne pas rire à la blague d'un autre invité.",
+  "Critique ouvertement son équipe sportive ou son club préféré.",
+  "Fais-lui répondre au jeu du « Toc Toc Toc ».",
+  "Fais-lui montrer une vieille photo d'elle plus jeune.",
+  "Fais-lui révéler sa mission.",
+  "Aide-la à réussir sa propre mission.",
+  "Convaincs-la de t'aider à réussir ta mission.",
+  "Fais-toi complimenter sur ta tenue par elle.",
+  "Bois une gorgée dans son verre.",
+  "Fais un shi-fu-mi (pierre-feuille-ciseaux) avec elle.",
+  "Fais un combat de pouce avec elle.",
+  "Fais un bras de fer avec elle.",
+  "Récupère son numéro de téléphone.",
+  "Fais-la parler dans une autre langue pendant une minute.",
+  "Fais-lui porter un toast improvisé.",
+  "Place une expression bizarre de ton choix dans une conversation avec elle.",
+  "Fais-la répéter une phrase de ton choix 3 fois de suite.",
+  "Fais-lui boire son verre cul sec.",
+  "Parle-lui de ses problèmes de pilosité, avec le sourire.",
+  "Reçois une déclaration d'amour ou d'amitié de sa part.",
+  "Fais-lui le « tu l'as vu », mais devant témoins.",
+  "Fais-lui embrasser quelqu'un (sur la joue, façon bisous).",
+  "Convaincs-la de se déguiser pour une photo.",
+  "Fais-lui prendre une photo de toi avec tes potes.",
+  "Fais un selfie avec ta cible.",
+  "Poste sur Instagram une photo avec elle.",
+  "Devenez amis sur les réseaux sociaux (il faut qu'elle accepte).",
+  "Fais-lui jouer une scène de film culte.",
+  "Attache-lui ses lacets ensemble sans qu'elle s'en aperçoive.",
+  "Fais-lui citer le nom de 5 Pokémon.",
+  "Fais-lui chanter une chanson de dessin animé.",
+  "Fais-lui chanter une chanson dans une autre langue.",
+  "Fais-la jongler avec 2 ou 3 objets.",
+  "Échange un vêtement avec elle et portez-le tous les deux au moins 10 minutes, devant témoins.",
+  "Fais-lui ramener des gâteaux ou une boisson pour le groupe.",
+  "Sers-lui à manger sans qu'elle demande.",
+  "Sers-lui un verre à table.",
+  "Propose-lui une danse pendant la soirée.",
+  "Convaincs-la de lire à voix haute son dernier message reçu.",
+  "Fais-lui envoyer un message à quelqu'un du groupe.",
+  "Envoie un message à un invité et obtiens une réponse.",
+  "Explique ton métier à quelqu'un sans qu'on te l'ait demandé.",
+  "Fais un câlin à la personne la plus âgée présente.",
+  "Serre la main à au moins 10 personnes.",
+  "Discute avec elle et contredis-la pendant toute la conversation.",
+  "Discute avec elle et sois d'accord avec tout ce qu'elle dit.",
+  "Joue d'un instrument de musique devant elle.",
+  "Gère la musique de la soirée pendant quelques minutes.",
+  "Ouvre une bouteille sans décapsuleur devant elle.",
+  "Montre-lui ta dernière photo prise.",
+  "Prends une photo avec elle sans qu'elle te voie.",
+  "Propose-lui de l'aide puis refuse finalement de l'aider.",
+  "Raconte tes dernières vacances totalement hors contexte, dans une conversation.",
+  "Joue à un jeu avec elle et triche ouvertement.",
+  "Provoque-la en battle de danse.",
+  "Chante assez fort pour que plusieurs personnes se retournent.",
+  "Fais un tour de magie devant elle (réussi ou pas).",
+  "Fais-toi inviter à manger par elle.",
+  "Invite-la à manger chez toi et qu'elle accepte.",
+  "Trouve une personne née la même année que toi.",
+  "Trouve une personne du même signe astrologique que toi.",
+  "Demande-lui 1€.",
+  "Échange ta mission avec un autre participant.",
+  "Fais un selfie avec la personne.",
+  "Fais-lui manger un aliment sans les mains.",
+  "Fais-lui prononcer une réplique de film culte.",
+  "Fais un check inventé en 3 mouvements avec elle.",
+  "Fais-lui deviner un mot en mimant, sans parler.",
+  "Fais-lui faire un « roast » gentil d'elle-même devant les autres.",
+  "Fais-lui deviner ce que tu as mangé au petit-déjeuner.",
+  "Fais-lui porter un vêtement ridicule pendant 5 minutes.",
+  "Convaincs-la de sauter dans la piscine tout habillée."
+];
+
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('Erreur de sauvegarde', e); }
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ state = JSON.parse(raw); }
+  }catch(e){ /* rien en stockage, on part de zéro */ }
+  if(!state.missionBank || state.missionBank.length === 0){
+    state.missionBank = DEFAULT_MISSIONS.map((text,i)=>({id:'m'+i, text, enabled:true}));
+    state.nextMissionId = DEFAULT_MISSIONS.length;
+    save();
+  }
+  render();
+}
+
+function alive(){ return state.players.filter(p=>p.alive); }
+function byId(id){ return state.players.find(p=>p.id===id); }
+function gameStarted(){ return Object.keys(state.targets).length > 0; }
+function pushLog(text){
+  state.log.unshift({text, ts: new Date().toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})});
+}
+function randomMission(){
+  const pool = state.missionBank.filter(m=>m.enabled);
+  if(pool.length === 0) return "Aucun défi disponible — coche-en dans la banque de défis !";
+  return pool[Math.floor(Math.random()*pool.length)].text;
+}
+function addMissionToBank(text){
+  text = text.trim();
+  if(!text) return;
+  const id = 'm'+(state.nextMissionId===undefined?state.missionBank.length:state.nextMissionId++);
+  state.missionBank.push({id, text, enabled:true});
+  save(); render();
+}
+function toggleMission(id){
+  const m = state.missionBank.find(x=>x.id===id);
+  if(m) m.enabled = !m.enabled;
+  save(); render();
+}
+function deleteMission(id){
+  state.missionBank = state.missionBank.filter(x=>x.id!==id);
+  save(); render();
+}
+
+function addPlayer(name){
+  name = name.trim();
+  if(!name) return;
+  const id = 'p'+state.nextId++;
+  const mission = randomMission();
+  if(!gameStarted()){
+    state.players.push({id, name, alive:true, mission});
+    pushLog(`${name} rejoint la partie (pas encore lancée).`);
+  } else {
+    const aliveIds = alive().map(p=>p.id);
+    if(aliveIds.length === 0){ state.players.push({id,name,alive:true,mission}); save(); render(); return; }
+    const a = aliveIds[Math.floor(Math.random()*aliveIds.length)];
+    const b = state.targets[a];
+    state.players.push({id, name, alive:true, mission});
+    state.targets[id] = b;
+    state.targets[a] = id;
+    pushLog(`${name} rejoint la partie en cours et est inséré(e) dans la chaîne.`);
+  }
+  save(); render();
+}
+
+function startGame(){
+  const ps = alive();
+  if(ps.length < 3) return;
+  const shuffled = [...ps].sort(()=>Math.random()-0.5);
+  state.targets = {};
+  for(let i=0;i<shuffled.length;i++){
+    const cur = shuffled[i];
+    const next = shuffled[(i+1)%shuffled.length];
+    state.targets[cur.id] = next.id;
+  }
+  pushLog(`La partie commence avec ${ps.length} joueurs. Que la traque commence !`);
+  save(); render();
+}
+
+function eliminate(killerId){
+  const victimId = state.targets[killerId];
+  if(!victimId) return;
+  const killer = byId(killerId), victim = byId(victimId);
+  state.targets[killerId] = state.targets[victimId];
+  delete state.targets[victimId];
+  victim.alive = false;
+  pushLog(`${killer.name} élimine ${victim.name} et récupère sa mission.`);
+  save(); render();
+}
+
+function resetAll(){
+  state = { players: [], targets: {}, log: [], nextId: 1, missionBank: state.missionBank, nextMissionId: state.nextMissionId };
+  save(); render();
+}
+
+// ---------- RENDER ----------
+function render(){
+  const a = alive();
+  const total = state.players.length;
+  document.getElementById('statusBar').innerHTML =
+    gameStarted()
+      ? `⚔️ EN COURS · ${a.length} vivant(s) / ${total}`
+      : `📋 PRÉPARATION · ${total} joueur(s) inscrit(s)`;
+
+  // players list
+  const plist = document.getElementById('playerList');
+  plist.innerHTML = '';
+  document.getElementById('emptyMsg').style.display = total ? 'none' : 'block';
+  state.players.forEach(p=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${p.name}</span><span class="tag ${p.alive?'tag-alive':'tag-dead'}">${p.alive?'Vivant':'Éliminé'}</span>`;
+    plist.appendChild(li);
+  });
+
+  // start card
+  document.getElementById('startCard').style.display = gameStarted() ? 'none' : 'block';
+  document.getElementById('startBtn').disabled = a.length < 3;
+  document.getElementById('addHint').textContent = gameStarted()
+    ? "Partie en cours : tout nouveau joueur sera automatiquement inséré dans la chaîne de missions existante."
+    : "Ajoute d'abord tes premiers joueurs, puis lance la partie. Les prochains arrivants (jour 4, jour 7) pourront être ajoutés plus tard.";
+
+  // mission tab select
+  const whoSelect = document.getElementById('whoSelect');
+  whoSelect.innerHTML = a.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('missionResult').innerHTML = '';
+
+  // eliminer tab
+  const killerSelect = document.getElementById('killerSelect');
+  killerSelect.innerHTML = a.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  updateVictimHint();
+
+  document.getElementById('winnerCard').style.display = 'none';
+  if(gameStarted() && a.length === 1){
+    document.getElementById('winnerCard').style.display = 'block';
+    document.getElementById('winnerCard').innerHTML = `<div class="winner"><div class="stamp">🏆 VAINQUEUR</div><h2 style="margin-top:10px;">${a[0].name}</h2></div>`;
+    document.getElementById('killBtn').disabled = true;
+  }
+
+  // mission bank
+  const mlist = document.getElementById('missionList');
+  mlist.innerHTML = state.missionBank.map(m=>`
+    <li class="${m.enabled?'':'disabled'}">
+      <input type="checkbox" data-id="${m.id}" class="mtoggle" ${m.enabled?'checked':''}>
+      <span class="mtext">${m.text}</span>
+      <button class="mdel" data-id="${m.id}" title="Supprimer">✕</button>
+    </li>
+  `).join('');
+
+  // journal
+  const logList = document.getElementById('logList');
+  logList.innerHTML = state.log.map(l=>`<div class="log-entry"><strong>${l.ts}</strong> — ${l.text}</div>`).join('');
+  document.getElementById('emptyLog').style.display = state.log.length ? 'none':'block';
+}
+
+function updateVictimHint(){
+  const killerSelect = document.getElementById('killerSelect');
+  const killBtn = document.getElementById('killBtn');
+  const hint = document.getElementById('victimHint');
+  const a = alive();
+  if(!gameStarted() || a.length < 2){
+    hint.textContent = "Lance d'abord la partie avec au moins 3 joueurs.";
+    killBtn.disabled = true;
+    return;
+  }
+  const killerId = killerSelect.value;
+  const victimId = state.targets[killerId];
+  const victim = byId(victimId);
+  hint.textContent = victim ? `Cible actuelle : ${victim.name}` : '';
+  killBtn.disabled = !victim || a.length===1;
+}
+
+// ---------- EVENTS ----------
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    ['joueurs','defis','mission','eliminer','journal'].forEach(t=>{
+      document.getElementById('tab-'+t).style.display = (t===btn.dataset.tab) ? 'block' : 'none';
+    });
+  });
+});
+
+document.getElementById('addBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('newName');
+  addPlayer(input.value);
+  input.value = '';
+});
+document.getElementById('newName').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ document.getElementById('addBtn').click(); }
+});
+document.getElementById('startBtn').addEventListener('click', startGame);
+
+document.getElementById('revealBtn').addEventListener('click', ()=>{
+  const id = document.getElementById('whoSelect').value;
+  const p = byId(id);
+  const targetId = state.targets[id];
+  const target = byId(targetId);
+  const box = document.getElementById('missionResult');
+  if(!target){ box.innerHTML = `<div class="hint">Pas de mission trouvée.</div>`; return; }
+  box.innerHTML = `
+    <div class="mission-card">
+      <div>Ta cible, ${p.name}...</div>
+      <div class="target">${target.name}</div>
+      <div class="bonus">🎯 Ta mission : ${p.mission || ''}</div>
+    </div>
+  `;
+  clearTimeout(window._hideTimer);
+  window._hideTimer = setTimeout(()=>{ box.innerHTML = '<div class="hint">Mission masquée. Redemande à ton tour !</div>'; }, 7000);
+});
+
+document.getElementById('addMissionBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('newMission');
+  addMissionToBank(input.value);
+  input.value = '';
+});
+document.getElementById('newMission').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ document.getElementById('addMissionBtn').click(); }
+});
+document.getElementById('missionList').addEventListener('change', e=>{
+  if(e.target.classList.contains('mtoggle')){ toggleMission(e.target.dataset.id); }
+});
+document.getElementById('missionList').addEventListener('click', e=>{
+  if(e.target.classList.contains('mdel')){
+    if(confirm('Supprimer ce défi de la banque ?')) deleteMission(e.target.dataset.id);
+  }
+});
+
+document.getElementById('killerSelect').addEventListener('change', updateVictimHint);
+document.getElementById('killBtn').addEventListener('click', ()=>{
+  const killerId = document.getElementById('killerSelect').value;
+  eliminate(killerId);
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Tout effacer et repartir de zéro ?')) resetAll();
+});
+
+load();
+</script>
+</body>
+</html>
