@@ -205,6 +205,13 @@
   .winner .stamp{font-size:1.5rem;}
   select:disabled{opacity:.6;}
   .empty{font-size:.85rem;color:rgba(43,36,32,.6);font-style:italic;}
+  .subtabs{display:flex;gap:6px;margin-bottom:10px;}
+  .subtab-btn{
+    flex:1;padding:8px 6px;border-radius:7px;border:1px solid rgba(43,36,32,.2);
+    background:#fff;color:var(--ink);font-family:'Inter',sans-serif;font-weight:600;
+    font-size:.8rem;cursor:pointer;
+  }
+  .subtab-btn.active{background:var(--pine);color:var(--kraft);border-color:var(--pine);}
   ul.mlist{list-style:none;margin:0;padding:0;max-height:520px;overflow-y:auto;}
   ul.mlist li{
     display:flex;align-items:flex-start;gap:10px;
@@ -430,6 +437,10 @@
     </div>
     <div class="card">
       <h2>Banque de défis</h2>
+      <div class="subtabs">
+        <button class="subtab-btn active" data-subtab="checked">✅ Actifs</button>
+        <button class="subtab-btn" data-subtab="unchecked">☐ Non actifs</button>
+      </div>
       <div class="hint" id="missionCountDisplay" style="margin-bottom:10px;"></div>
       <ul class="mlist" id="missionList"></ul>
     </div>
@@ -544,7 +555,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722191500';
+const APP_VERSION = '20260722193500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -1253,12 +1264,24 @@ function renderReglagesTab(){
   document.getElementById('versionDisplay').textContent = `Version ${APP_VERSION}`;
 }
 
+let defisSubTab = 'checked';
+
 function renderDefisTab(){
   const total = state.missionBank.length;
-  const enabled = state.missionBank.filter(m=>m.enabled).length;
-  document.getElementById('missionCountDisplay').textContent = `${enabled} défi${enabled>1?'s':''} coché${enabled>1?'s':''} sur ${total} au total.`;
+  const checkedCount = state.missionBank.filter(m=>m.enabled).length;
+  const uncheckedCount = total - checkedCount;
+
+  document.querySelectorAll('.subtab-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.subtab === defisSubTab);
+  });
+
+  const filtered = state.missionBank.filter(m=> defisSubTab === 'checked' ? m.enabled : !m.enabled);
+  document.getElementById('missionCountDisplay').textContent = defisSubTab === 'checked'
+    ? `${checkedCount} défi${checkedCount>1?'s':''} actif${checkedCount>1?'s':''} sur ${total} au total.`
+    : `${uncheckedCount} défi${uncheckedCount>1?'s':''} non actif${uncheckedCount>1?'s':''} sur ${total} au total.`;
+
   const mlist = document.getElementById('missionList');
-  mlist.innerHTML = state.missionBank.map(m=>`
+  mlist.innerHTML = filtered.map(m=>`
     <li class="${m.enabled?'':'disabled'}">
       <input type="checkbox" data-id="${m.id}" class="mtoggle" ${m.enabled?'checked':''}>
       <span class="mtext">${m.text}</span>
@@ -1600,6 +1623,12 @@ document.getElementById('addMissionBtn').addEventListener('click', ()=>{
 });
 document.getElementById('newMission').addEventListener('keydown', e=>{
   if(e.key === 'Enter'){ document.getElementById('addMissionBtn').click(); }
+});
+document.querySelectorAll('.subtab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    defisSubTab = btn.dataset.subtab;
+    renderDefisTab();
+  });
 });
 document.getElementById('missionList').addEventListener('change', e=>{
   if(e.target.classList.contains('mtoggle')){ toggleMission(e.target.dataset.id); }

@@ -159,8 +159,12 @@ Vue d'ensemble → Réglages`
 - **Ma mission** : chaque joueur consulte sa cible + son défi en privé
   (masquage auto après 7s). Bouton pour changer de défi (-1 point,
   tirage sans répétition parmi les défis cochés).
-- **Défis** : banque de défis, cases à cocher (inclus/exclus du tirage),
-  ajout, édition (✎), suppression. Compteur "X cochés sur Y".
+- **Défis** : banque de défis, ajout, édition (✎), suppression. Deux
+  sous-onglets ("✅ Actifs" / "☐ Non actifs", variable JS `defisSubTab`,
+  jamais persistée) filtrent la liste ; cocher/décocher un défi le fait
+  disparaître de la liste courante puisqu'il ne correspond plus au
+  filtre. Compteur contextuel ("X cochés sur Y" ou "X décochés sur Y")
+  au-dessus de la liste affichée.
 - **Éliminer** : sélection du chasseur, confirmation, validation de
   l'élimination (avec pop-up de confirmation). Bouton "Annuler la
   dernière élimination" si applicable.
