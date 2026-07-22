@@ -367,6 +367,90 @@ Vue d'ensemble → Réglages`
 - Pouvoir retirer un joueur d'une partie déjà lancée (actuellement
   impossible, seul le retrait avant lancement est permis).
 
+### Pistes de gameplay plus profondes (proposées, pas encore tranchées)
+
+Ces six idées ont été proposées en réponse à "certains joueurs ne
+jouent plus assez longtemps" — contrairement aux idées listées en
+section 9, elles n'ont pas été explicitement refusées, juste laissées
+en réflexion. À ne développer que sur demande explicite, et
+idéalement après avoir demandé laquelle (ou lesquelles) l'utilisateur
+préfère, plutôt que de toutes les implémenter d'un coup.
+
+1. **Rôles secrets** — en plus de leur mission classique, certains
+   joueurs tirés au sort reçoivent un rôle spécial : *Garde du corps*
+   (protège discrètement quelqu'un ; si cette personne est éliminée,
+   l'assassin est neutralisé à la place), *Traître* (a deux cibles à
+   éliminer au lieu d'une), *Espion* (peut voir la cible d'un autre
+   joueur une fois dans la partie). Casse la monotonie "un chasseur, une
+   cible" et crée des retournements de situation.
+2. **Indices au lieu du nom direct** — au lieu d'afficher "Ta cible :
+   Julie", l'appli donne un indice ("Elle porte souvent du bleu", "Elle
+   est arrivée le 2e jour") et le joueur doit deviner qui c'est avant de
+   pouvoir agir. Ajoute une couche d'enquête, pas seulement d'exécution.
+3. **Trêves aléatoires** — de temps en temps, l'appli déclare une
+   "trêve" surprise d'une heure (in-game event) pendant laquelle
+   personne ne peut éliminer. Crée du suspense sans dépendre du
+   calendrier réel du séjour.
+4. **Immunité votée** — une fois par jour, le groupe vote pour donner
+   l'immunité à quelqu'un (façon Koh-Lanta) ; cette personne ne peut pas
+   être éliminée jusqu'au prochain vote. Ajoute une dimension
+   sociale/stratégique en plus du jeu individuel.
+5. **Dernier geste du fantôme** — un joueur éliminé a droit à une
+   dernière action avant de "vraiment" sortir du jeu : glisser un faux
+   indice à quelqu'un, ou révéler (sans le vouloir) une info sur son
+   ancien tueur. Garde les éliminés impliqués un peu plus longtemps.
+6. **Défis à niveaux de difficulté** — chaque défi porte une étiquette
+   Facile/Moyen/Difficile ; les difficiles rapportent un bonus (par
+   exemple, le joueur peut échanger sa mission actuelle contre une plus
+   facile une fois dans la partie, façon joker). Se combinerait
+   potentiellement avec le système de pénalité de changement de défi
+   déjà en place (section 6).
+
+### Réintégrer les joueurs éliminés (proposées, pas encore tranchées)
+
+Proposées face au constat que certains joueurs éliminés tôt décrochent
+et ne jouent plus assez longtemps. Par ordre du plus léger au plus
+"changement de règle" :
+
+1. **Le sursis** (recommandation la plus simple) — plutôt que de
+   réintégrer après la mort, retarder la mort elle-même : la première
+   fois qu'on est éliminé, on ne meurt pas vraiment — on "survit de
+   justesse" et on récupère un nouveau défi (éventuellement plus dur,
+   ou avec un malus de points). La vraie élimination n'arrive qu'à la
+   deuxième fois où on se fait attraper. Nécessite juste un compteur de
+   "vies" par joueur (1 ou 2) ; presque aucune nouvelle règle à
+   expliquer au groupe.
+2. **La résurrection par vote** (façon grâce collective, la plus fun
+   socialement) — une fois par jour (ou une fois pour tout le séjour),
+   le groupe vote pour "gracier" un joueur éliminé de son choix. Il est
+   réinséré dans la chaîne exactement comme un nouvel arrivant (même
+   mécanique déjà en place — voir `addPlayerToGame`). Crée un vrai
+   moment social ("qui va-t-on sauver ce soir ?").
+3. **La vengeance ciblée** — un joueur éliminé garde un objectif secret :
+   si la personne qui l'a tué se fait éliminer à son tour, il regagne
+   quelques points de "vengeance" au classement. Il ne rejoue pas
+   activement, mais garde une raison de suivre la partie de près.
+4. **L'équipe fantôme** (un jeu à part, pas une résurrection) — les
+   joueurs éliminés forment un petit groupe avec son propre
+   mini-classement, basé sur des défis "spectateurs" (deviner qui va
+   gagner, réaliser un défi comique imposé par le groupe...). Leur donne
+   une occupation sans toucher à la partie principale ni à son
+   équilibre.
+5. **Le contrat sur la tête du tueur** (la plus complexe) — chaque
+   joueur éliminé peut secrètement "commanditer" un défi bonus à
+   réaliser sur son propre tueur, confié à quelqu'un encore en vie de
+   son choix. Si le défi réussit, les deux gagnent un petit bonus.
+   Implique les morts dans la suite du jeu sans les faire revivre
+   littéralement.
+
+Recommandation donnée à l'utilisateur au moment de la proposition :
+l'option 1 (sursis) est la plus simple à greffer sur le modèle de
+données actuel (`Player.kills`/`Player.penalties` existent déjà, un
+champ `lives` suivrait le même principe) et résout le problème sans
+ajouter de couche de règles. L'option 2 (résurrection par vote) est la
+plus intéressante si l'utilisateur veut en plus un moment collectif fort
+en soirée.
+
 ---
 
 ## 11. Check-list avant de livrer une modification
