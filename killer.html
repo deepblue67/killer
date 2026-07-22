@@ -399,6 +399,11 @@
         <button class="btn btn-danger" id="killBtn" disabled>Valider l'élimination</button>
       </div>
     </div>
+    <div class="card" id="undoCard" style="display:none;">
+      <h2>Annuler la dernière action</h2>
+      <div class="hint" id="undoHint" style="margin-bottom:10px;"></div>
+      <button class="btn btn-ghost" id="undoBtn">Annuler la dernière élimination</button>
+    </div>
   </section>
 
   <section id="tab-classement" style="display:none;">
@@ -461,7 +466,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722164500';
+const APP_VERSION = '20260722170000';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 
@@ -632,6 +637,36 @@ function byName(list){
   return [...list].sort((a,b)=>a.name.localeCompare(b.name, 'fr', {sensitivity:'base'}));
 }
 
+function showToast(message, isError){
+  const existing = document.getElementById('toastBanner');
+  if(existing) existing.remove();
+  const t = document.createElement('div');
+  t.id = 'toastBanner';
+  t.style.cssText = `position:fixed;left:14px;right:14px;bottom:14px;background:${isError?'var(--blood)':'var(--pine)'};color:${isError?'#fff':'var(--kraft)'};padding:13px 16px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:9998;font-family:'Inter',sans-serif;font-size:.85rem;text-align:center;line-height:1.4;`;
+  t.textContent = message;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.remove(); }, 3200);
+}
+
+function showConfirm(message){
+  return new Promise(resolve=>{
+    const existing = document.getElementById('confirmBanner');
+    if(existing) existing.remove();
+    const banner = document.createElement('div');
+    banner.id = 'confirmBanner';
+    banner.style.cssText = "position:fixed;left:14px;right:14px;bottom:14px;background:var(--kraft);color:var(--ink);padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:9998;font-family:'Inter',sans-serif;";
+    banner.innerHTML = `
+      <div style="font-size:.85rem;margin-bottom:12px;line-height:1.4;">${message}</div>
+      <div style="display:flex;gap:8px;">
+        <button id="confirmYes" class="btn btn-danger" style="flex:1;">Confirmer</button>
+        <button id="confirmNo" class="btn btn-ghost" style="flex:1;">Annuler</button>
+      </div>`;
+    document.body.appendChild(banner);
+    document.getElementById('confirmYes').addEventListener('click', ()=>{ banner.remove(); resolve(true); });
+    document.getElementById('confirmNo').addEventListener('click', ()=>{ banner.remove(); resolve(false); });
+  });
+}
+
 function nowStr(){
   return new Date().toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
@@ -763,6 +798,15 @@ function deleteGame(gid){
   save(); render();
 }
 
+function removePlayerFromGame(game, playerId){
+  if(game.started) return;
+  const p = gameById(game, playerId);
+  if(!p) return;
+  game.players = game.players.filter(x=>x.id!==playerId);
+  game.log.unshift({text:`${p.name} a été retiré(e) de la partie « ${game.title} » avant son lancement.`, ts:nowStr()});
+  save(); render();
+}
+
 function addPlayerToGame(game, rosterId){
   const r = state.roster.find(x=>x.id===rosterId);
   if(!r) return;
@@ -799,6 +843,7 @@ function startGame(game){
     game.targets[cur.id] = next.id;
   }
   game.started = true;
+  game.lastElimination = null;
   game.log.unshift({text:`La partie « ${game.title} » commence avec ${ps.length} joueurs. Que la traque commence !`, ts:nowStr()});
   save(); render();
 }
@@ -816,6 +861,7 @@ function restartGame(game){
   game.targets = {};
   game.eliminationCounter = 0;
   game.started = false;
+  game.lastElimination = null;
   game.log.unshift({text:`La partie « ${game.title} » a été arrêtée et réinitialisée (tout le monde revit, nouveaux défis tirés). Prête à être relancée.`, ts:nowStr()});
   save(); render();
 }
@@ -825,14 +871,41 @@ function eliminate(game, killerId){
   if(!victimId) return;
   const killer = gameById(game,killerId), victim = gameById(game,victimId);
   const usedMission = killer.mission;
-  victim.lastTargetId = game.targets[victimId];
-  game.targets[killerId] = game.targets[victimId];
+  const victimTargetBefore = game.targets[victimId];
+  game.lastElimination = {
+    killerId, victimId,
+    killerMissionBefore: usedMission,
+    killerKillsBefore: killer.kills || 0,
+    victimTargetBefore,
+    eliminationCounterBefore: game.eliminationCounter
+  };
+  victim.lastTargetId = victimTargetBefore;
+  game.targets[killerId] = victimTargetBefore;
   delete game.targets[victimId];
   victim.alive = false;
   victim.eliminatedAt = ++game.eliminationCounter;
   killer.kills = (killer.kills||0) + 1;
   killer.mission = victim.mission;
   game.log.unshift({text:`${killer.name} élimine ${victim.name} avec le défi « ${usedMission} » et récupère une nouvelle mission : « ${killer.mission} ». (${killer.kills} élimination${killer.kills>1?'s':''} pour ${killer.name})`, ts:nowStr()});
+  save(); render();
+}
+
+function undoLastElimination(game){
+  const snap = game.lastElimination;
+  if(!snap) return;
+  const killer = gameById(game, snap.killerId);
+  const victim = gameById(game, snap.victimId);
+  if(!killer || !victim) return;
+  victim.alive = true;
+  delete victim.eliminatedAt;
+  delete victim.lastTargetId;
+  killer.kills = snap.killerKillsBefore;
+  killer.mission = snap.killerMissionBefore;
+  game.targets[snap.killerId] = snap.victimId;
+  game.targets[snap.victimId] = snap.victimTargetBefore;
+  game.eliminationCounter = snap.eliminationCounterBefore;
+  game.log.unshift({text:`Annulation : l'élimination de ${victim.name} par ${killer.name} a été annulée.`, ts:nowStr()});
+  game.lastElimination = null;
   save(); render();
 }
 
@@ -882,7 +955,10 @@ function renderPartiesTab(game){
     document.getElementById('activeGameTitle').textContent = `Partie active : ${game.title}`;
     const list = document.getElementById('activeGamePlayers');
     list.innerHTML = byName(game.players).map(p=>`
-      <li><span>${p.name}</span><span class="tag ${p.alive?'tag-alive':'tag-dead'}">${p.alive?'Vivant':'Éliminé'}</span></li>
+      <li><span>${p.name}</span><span style="display:flex;gap:6px;align-items:center;">
+        <span class="tag ${p.alive?'tag-alive':'tag-dead'}">${p.alive?'Vivant':'Éliminé'}</span>
+        ${!game.started ? `<button class="mdel" data-removeplayer="${p.id}" title="Retirer" style="color:var(--blood);background:none;border:none;font-size:1rem;cursor:pointer;">✕</button>` : ''}
+      </span></li>
     `).join('');
     const inGameIds = game.players.map(p=>p.name);
     const available = byName(state.roster.filter(r=>!game.players.some(p=>p.name===r.name)));
@@ -981,6 +1057,14 @@ function renderEliminerTab(game){
   const has = !!game;
   document.getElementById('noActiveGameEliminer').style.display = has ? 'none' : 'block';
   document.getElementById('eliminerTabContent').style.display = has ? 'block' : 'none';
+  document.getElementById('undoCard').style.display = (has && game.lastElimination) ? 'block' : 'none';
+  if(has && game.lastElimination){
+    const killer = gameById(game, game.lastElimination.killerId);
+    const victim = gameById(game, game.lastElimination.victimId);
+    document.getElementById('undoHint').textContent = (killer && victim)
+      ? `Dernière action : ${killer.name} a éliminé ${victim.name}.`
+      : '';
+  }
   if(!has) return;
   const a = gameAlive(game);
   const killerSelect = document.getElementById('killerSelect');
@@ -1151,7 +1235,7 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
 document.getElementById('createGameBtn').addEventListener('click', ()=>{
   const title = document.getElementById('gameTitle').value;
   const ids = [...document.querySelectorAll('#rosterCheckList .rcheck:checked')].map(c=>c.value);
-  if(!title.trim()){ alert('Donne un titre à la partie.'); return; }
+  if(!title.trim()){ showToast('Donne un titre à la partie.', true); return; }
   createGame(title, ids);
   document.getElementById('gameTitle').value = '';
 });
@@ -1161,6 +1245,16 @@ document.getElementById('rosterAddBtn').addEventListener('click', ()=>{
   const rid = document.getElementById('rosterAddSelect').value;
   if(rid) addPlayerToGame(game, rid);
 });
+document.getElementById('activeGamePlayers').addEventListener('click', e=>{
+  if(e.target.dataset.removeplayer){
+    const game = currentGame();
+    if(!game) return;
+    const p = gameById(game, e.target.dataset.removeplayer);
+    showConfirm(`Retirer ${p ? p.name : 'ce joueur'} de la partie avant son lancement ?`).then(ok=>{
+      if(ok) removePlayerFromGame(game, e.target.dataset.removeplayer);
+    });
+  }
+});
 document.getElementById('startGameBtn').addEventListener('click', ()=>{
   const game = currentGame();
   if(game) startGame(game);
@@ -1168,14 +1262,16 @@ document.getElementById('startGameBtn').addEventListener('click', ()=>{
 document.getElementById('restartGameBtn').addEventListener('click', ()=>{
   const game = currentGame();
   if(!game) return;
-  if(confirm(`Arrêter la partie « ${game.title} » et la recommencer depuis le début ? Tout le monde revit, avec de nouveaux défis. L'historique déjà enregistré dans le journal est conservé.`)){
-    restartGame(game);
-  }
+  showConfirm(`Arrêter la partie « ${game.title} » et la recommencer depuis le début ? Tout le monde revit, avec de nouveaux défis. L'historique déjà enregistré dans le journal est conservé.`).then(ok=>{
+    if(ok) restartGame(game);
+  });
 });
 document.getElementById('gamesList').addEventListener('click', e=>{
   if(e.target.dataset.open){ state.currentGameId = e.target.dataset.open; save(); render(); }
   if(e.target.dataset.delgame){
-    if(confirm('Supprimer définitivement cette partie ?')) deleteGame(e.target.dataset.delgame);
+    showConfirm('Supprimer définitivement cette partie ?').then(ok=>{
+      if(ok) deleteGame(e.target.dataset.delgame);
+    });
   }
 });
 
@@ -1190,7 +1286,9 @@ document.getElementById('newRosterName').addEventListener('keydown', e=>{
 });
 document.getElementById('rosterMgmtList').addEventListener('click', e=>{
   if(e.target.dataset.delroster){
-    if(confirm('Retirer ce joueur du roster ? (les parties déjà créées ne sont pas affectées)')) removeRosterPlayer(e.target.dataset.delroster);
+    showConfirm('Retirer ce joueur du roster ? (les parties déjà créées ne sont pas affectées)').then(ok=>{
+      if(ok) removeRosterPlayer(e.target.dataset.delroster);
+    });
   }
 });
 document.getElementById('themeGrid').addEventListener('click', e=>{
@@ -1215,7 +1313,9 @@ document.getElementById('missionList').addEventListener('change', e=>{
 });
 document.getElementById('missionList').addEventListener('click', e=>{
   if(e.target.classList.contains('mdel')){
-    if(confirm('Supprimer ce défi de la banque ?')) deleteMission(e.target.dataset.id);
+    showConfirm('Supprimer ce défi de la banque ?').then(ok=>{
+      if(ok) deleteMission(e.target.dataset.id);
+    });
   }
   if(e.target.classList.contains('medit')){
     editMission(e.target.dataset.id);
@@ -1254,27 +1354,39 @@ document.getElementById('killBtn').addEventListener('click', ()=>{
   const killerId = document.getElementById('killerSelect').value;
   eliminate(game, killerId);
 });
+document.getElementById('undoBtn').addEventListener('click', ()=>{
+  const game = currentGame();
+  if(!game || !game.lastElimination) return;
+  showConfirm("Annuler la dernière élimination ? La victime revit, le tueur reperd son point et son ancien défi.").then(ok=>{
+    if(ok) undoLastElimination(game);
+  });
+});
 
 // Journal tab
 document.getElementById('deleteGameBtn').addEventListener('click', ()=>{
   const game = currentGame();
   if(!game) return;
-  if(confirm(`Supprimer définitivement la partie « ${game.title} » ?`)) deleteGame(game.id);
+  showConfirm(`Supprimer définitivement la partie « ${game.title} » ?`).then(ok=>{
+    if(ok) deleteGame(game.id);
+  });
 });
 
 // Réglages — code PIN
 document.getElementById('savePinBtn').addEventListener('click', ()=>{
   const val = document.getElementById('pinInput').value.trim();
-  if(val.length < 4){ alert('Le code doit faire au moins 4 chiffres.'); return; }
+  if(val.length < 4){ showToast('Le code doit faire au moins 4 chiffres.', true); return; }
   state.pin = val;
   document.getElementById('pinInput').value = '';
   save(); render();
+  showToast('Code PIN enregistré.');
 });
 document.getElementById('clearPinBtn').addEventListener('click', ()=>{
-  if(confirm('Retirer le code PIN ? La vue d\'ensemble sera accessible sans protection.')){
-    state.pin = '';
-    save(); render();
-  }
+  showConfirm("Retirer le code PIN ? La vue d'ensemble sera accessible sans protection.").then(ok=>{
+    if(ok){
+      state.pin = '';
+      save(); render();
+    }
+  });
 });
 
 // Réglages — synchronisation des données
@@ -1314,10 +1426,11 @@ document.getElementById('importFileInput').addEventListener('change', (e)=>{
     try{
       const imported = JSON.parse(ev.target.result);
       if(!imported || !Array.isArray(imported.games) || !Array.isArray(imported.roster) || !Array.isArray(imported.missionBank)){
-        alert("Fichier invalide : ce n'est pas un export Dossier Killer reconnu.");
+        showToast("Fichier invalide : ce n'est pas un export Dossier Killer reconnu.", true);
         return;
       }
-      if(confirm('Importer ce fichier va REMPLACER toutes les données de cet appareil (roster, parties, défis, thème, code PIN). Continuer ?')){
+      showConfirm('Importer ce fichier va REMPLACER toutes les données de cet appareil (roster, parties, défis, thème, code PIN). Continuer ?').then(ok=>{
+        if(!ok) return;
         state = imported;
         if(!state.theme) state.theme = 'foret';
         if(state.pin === undefined) state.pin = '';
@@ -1326,9 +1439,9 @@ document.getElementById('importFileInput').addEventListener('change', (e)=>{
         save();
         render();
         syncStatus.textContent = 'Import terminé : les données ont été remplacées.';
-      }
+      });
     }catch(err){
-      alert('Impossible de lire ce fichier (JSON invalide).');
+      showToast('Impossible de lire ce fichier (JSON invalide).', true);
     }
     document.getElementById('importFileInput').value = '';
   };
