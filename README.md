@@ -1,0 +1,302 @@
+# Dossier Killer — README de reprise et de maintenance
+
+> **À lire avant toute intervention.** Ce document doit être mis à jour à
+> chaque modification fonctionnelle, visuelle ou technique de l'application.
+> Si tu (humain ou IA) modifies le code sans mettre ce fichier à jour, le
+> prochain repreneur du projet perdra du temps à redécouvrir ce qui a changé.
+
+Dernière mise à jour de ce document : correspond à la version d'application
+**20260722181500**.
+
+---
+
+## 1. C'est quoi, ce projet ?
+
+Une web app autonome (aucun serveur, aucun compte) qui gère une partie de
+**Killer** (jeu d'élimination façon "chacun a une cible secrète à
+éliminer") pendant un séjour de vacances entre adultes, avec des arrivées
+de joueurs échelonnées dans le temps (ex: 13 joueurs, puis +1, puis +2).
+
+Elle tourne entièrement dans le navigateur : pas de backend, pas de base de
+données distante. Toutes les données (roster de joueurs, parties, banque de
+défis, thème, code PIN...) sont stockées en **`localStorage`**, propre à
+chaque combinaison navigateur + appareil.
+
+### Fichiers du projet (tous à la racine du dépôt GitHub)
+
+| Fichier | Rôle |
+|---|---|
+| `killer.html` | L'application entière : HTML + CSS + JS, un seul fichier. C'est le fichier à modifier pour 95% des évolutions. |
+| `index.html` | Redirection automatique vers `killer.html`, pour que l'URL racine du site (`https://.../`) fonctionne (GitHub Pages sert `index.html` par défaut). |
+| `service-worker.js` | Gère le cache offline et la détection de nouvelle version. Contient `CACHE_VERSION`. |
+| `manifest.json` | Métadonnées PWA (nom, icônes, couleur) pour l'ajout à l'écran d'accueil iOS/Android. |
+| `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `favicon-32.png` | Icônes de l'app (visuel "tampon TOP SECRET"), générées depuis un SVG via `rsvg-convert`. |
+
+**Important** : le nom de fichier `killer.html` est en dur dans
+`manifest.json` (`start_url`) et dans `service-worker.js`
+(`ASSETS_TO_CACHE` et le fallback offline). Si on renomme à nouveau le
+fichier principal, il faut mettre à jour ces deux références (voir section
+9 — historique des incidents).
+
+---
+
+## 2. Comment déployer / mettre à jour
+
+1. Le dépôt GitHub héberge ces fichiers via **GitHub Pages**, tous à la
+   racine (pas de sous-dossier).
+2. Après toute modification, **incrémenter la version** (voir section 3)
+   dans `killer.html` (`APP_VERSION`) ET `service-worker.js`
+   (`CACHE_VERSION`) — les deux doivent toujours être identiques.
+3. Pousser les fichiers modifiés sur GitHub.
+4. Sur les appareils qui ont déjà l'app ouverte/installée : le service
+   worker détecte la nouvelle version et affiche un bandeau
+   *"🔄 Nouvelle version disponible"* en bas de l'écran. Un tap dessus
+   recharge l'app avec la nouvelle version. Sans ce clic, l'ancienne
+   version cachée continue de s'afficher.
+
+## 3. Système de version
+
+- Format : `AAAAMMJJHHMMSS` (ex: `20260722181500` = 22 juillet 2026,
+  18h15min00s).
+- Deux constantes à garder synchronisées à chaque changement :
+  - `const APP_VERSION = '...'` en haut du `<script>` dans `killer.html`.
+  - `const CACHE_VERSION = '...'` en haut de `service-worker.js`.
+- La version s'affiche dans l'app : onglet **Réglages → Version**.
+- C'est Claude/l'assistant qui gère cette version à chaque itération —
+  l'utilisateur n'a pas à y penser.
+
+## 4. Modèle de données (`state`)
+
+Tout est contenu dans un unique objet JS `state`, sérialisé en JSON dans
+`localStorage` sous la clé `killer-montagne-state-v2`.
+
+```js
+state = {
+  roster: [{id, name}],              // Liste globale des joueurs potentiels
+  nextRosterId: 1,
+  games: [ Game ],                   // Historique de toutes les parties (jamais purgé sauf suppression manuelle)
+  nextGameId: 1,
+  nextPlayerSeq: 1,                  // Compteur global d'IDs de joueurs "en partie" (uniques même entre parties)
+  currentGameId: null,               // Quelle partie est actuellement "ouverte" dans les onglets
+  missionBank: [{id, text, enabled}],// Banque de défis, éditable
+  nextMissionId: 0,
+  missionBankVersion: 0,             // Sert à migrer automatiquement la banque par défaut (voir section 6)
+  theme: 'foret',                    // Clé dans THEMES
+  pin: '',                           // Code PIN protégeant l'onglet "Vue d'ensemble"
+  lastExportAt: null                 // epoch ms du dernier export réussi
+}
+```
+
+### Objet `Game`
+
+```js
+{
+  id, title,
+  players: [Player],
+  targets: {playerId: targetPlayerId},   // La chaîne d'éliminations en cours
+  log: [{text, ts, epoch}],              // Journal humain, plus récent en premier (unshift)
+  eliminationCounter: 0,                 // Incrémenté à chaque kill, sert de tiebreak "survécu le plus longtemps"
+  eliminationEvents: [{mission, epoch, killerName, victimName}], // Historique structuré pour le Bilan de fin de partie
+  lastElimination: {...} | null,         // Snapshot pour permettre "Annuler la dernière élimination"
+  started: bool,
+  createdAt: epoch
+}
+```
+
+### Objet `Player` (dans `game.players`)
+
+```js
+{
+  id, name, alive: bool,
+  mission: "texte du défi en cours",
+  kills: 0,
+  penalties: 0,          // Nombre de fois où ce joueur a changé de défi (coûte 1 point chacun)
+  eliminatedAt: N,        // Position dans l'ordre des éliminations (undefined si vivant)
+  lastTargetId: id,       // Sauvegardé au moment de la mort, pour le récapitulatif/undo
+}
+```
+
+### Calcul du score (classement)
+
+`score = (kills || 0) - (penalties || 0)`. Peut être négatif. Trié
+décroissant, égalité départagée par la survie la plus longue
+(`eliminatedAt` le plus grand, ou vivant = infini).
+
+---
+
+## 5. Tour des onglets (ordre actuel de la nav)
+
+`Parties → Ma mission → Défis → Éliminer → Classement → Journal →
+Vue d'ensemble → Réglages`
+
+- **Parties** : créer une partie (titre + sélection dans le roster),
+  gérer la partie "active" (ajouter/retirer des joueurs avant lancement,
+  lancer, arrêter et recommencer), historique des parties ("Mes parties",
+  masqué s'il n'y en a qu'une seule). Une seule partie peut être "en
+  cours" (`started && >1 vivant`) à la fois — la création est bloquée
+  sinon.
+- **Ma mission** : chaque joueur consulte sa cible + son défi en privé
+  (masquage auto après 7s). Bouton pour changer de défi (-1 point,
+  tirage sans répétition parmi les défis cochés).
+- **Défis** : banque de défis, cases à cocher (inclus/exclus du tirage),
+  ajout, édition (✎), suppression. Compteur "X cochés sur Y".
+- **Éliminer** : sélection du chasseur, confirmation, validation de
+  l'élimination (avec pop-up de confirmation). Bouton "Annuler la
+  dernière élimination" si applicable.
+- **Classement** : trié par score (voir section 4). Badge "Dernier
+  survivant" séparé. "Bilan de fin de partie" (défi le plus utilisé,
+  élimination la plus rapide, survivant le plus discret) pour les
+  parties terminées.
+- **Journal** : historique horodaté de la partie active, récapitulatif
+  complet (qui chassait qui + défi) pour les parties terminées,
+  suppression de la partie.
+- **Vue d'ensemble** : réservé à l'organisateur, protégé par code PIN
+  (optionnel, défini dans Réglages). Se reverrouille à chaque fois qu'on
+  quitte/rouvre l'onglet (jamais mémorisé). Affiche un schéma circulaire
+  de la chaîne (le joueur `orderedPlayers[0]` est toujours en haut,
+  sens horaire) + un tableau utilisant **le même ordre**.
+- **Réglages** : guide d'utilisation, roster, thème (10 choix), code PIN,
+  synchronisation (export/import JSON avec Web Share API + fallback
+  téléchargement), rappel de dernier export, numéro de version.
+
+---
+
+## 6. Règles de jeu importantes à connaître avant de coder dessus
+
+- **Chaîne unique** : tous les joueurs vivants forment un seul cycle
+  (A→B→C→...→A). Éliminer quelqu'un = hériter de sa cible ET de son défi
+  (`killer.mission = victim.mission`).
+- **Insertion des retardataires** : ajouter un joueur en cours de partie
+  choisit un joueur vivant au hasard (A→B) et insère le nouveau au milieu
+  (A→nouveau→B). Ça marche quel que soit l'état d'avancement de la partie.
+- **Défis sans répétition** : `randomMission(excludeTexts)` tire parmi les
+  défis cochés, en excluant ceux déjà utilisés dans la partie. Si la
+  banque cochée est épuisée, il y a un repli qui autorise la répétition
+  (avec un avertissement loggé).
+- **Changement de défi (pénalité)** : `swapMission()` exclut à la fois
+  les défis des autres joueurs ET le défi actuel du joueur (pour éviter
+  de retomber sur le même), puis incrémente `penalties`.
+- **Annulation d'élimination** : un seul niveau d'annulation (la toute
+  dernière), via `game.lastElimination` (snapshot) et
+  `game.eliminationEvents.pop()`.
+
+---
+
+## 7. Détails techniques notables
+
+- **Aucune dépendance externe** hormis les polices Google Fonts
+  (`Special Elite` + `Inter`) chargées par `<link>`. Tout le reste est du
+  JS vanille, pas de framework.
+- **Stockage** : `localStorage`, clé `killer-montagne-state-v2`. Fonction
+  `save()` / `load()`. `load()` gère aussi les migrations de la banque de
+  défis (voir `missionBankVersion`) et les valeurs par défaut manquantes
+  pour les anciens états sauvegardés (rétrocompatibilité).
+- **UI de confirmation** : pas de `confirm()`/`alert()` natifs du
+  navigateur — remplacés par `showConfirm(message)` (retourne une
+  Promise<boolean>, bandeau en bas d'écran) et `showToast(message,
+  isError)` (message temporaire auto-disparaissant). Toujours utiliser
+  ces deux fonctions pour toute nouvelle confirmation/notification.
+- **Rendu** : une seule fonction `render()` centrale qui appelle un
+  `renderXxxTab()` par onglet à chaque changement d'état. Pas de
+  framework réactif — tout est réécrit en `innerHTML` à chaque appel.
+  C'est volontairement simple ; si l'app grossit encore beaucoup, un vrai
+  framework deviendrait pertinent, mais ce n'est pas le cas aujourd'hui.
+- **Vue d'ensemble / schéma** : `buildChainSVG()` place le joueur
+  d'indice 0 du tableau reçu en haut du cercle (angle `-π/2`) et les
+  suivants dans le sens horaire. Le tableau de la Vue d'ensemble doit
+  toujours recevoir le **même tableau ordonné** (`orderedPlayers`) que le
+  schéma, pour rester cohérent visuellement.
+- **Export/Import** : `navigator.share()` avec fichier si supporté
+  (ouvre la feuille de partage iOS : Mail, Messages, AirDrop...), sinon
+  téléchargement classique via lien `<a download>`. L'import **remplace
+  entièrement** `state` (pas de fusion), après confirmation explicite.
+- **Thèmes** : un objet `THEMES` avec des palettes nommées ; `applyTheme()`
+  écrit les CSS custom properties (`--pine`, `--kraft`, etc.) sur
+  `documentElement.style`. Ajouter un thème = ajouter une entrée à
+  `THEMES` avec les mêmes clés.
+
+---
+
+## 8. Contenu de la banque de défis
+
+- `DEFAULT_MISSIONS` : 93 défis (le socle initial).
+- `EXTRA_MISSIONS_V2` : 30 défis ajoutés ensuite.
+- `EXTRA_MISSIONS_V3` : 93 défis ajoutés ensuite.
+- **Total actuel : 216 défis**, tous cochés par défaut à leur ajout.
+- La migration (`load()`) ajoute automatiquement les nouveaux lots aux
+  installations existantes, **sans dupliquer** (comparaison par texte
+  exact) et sans toucher aux coches/modifications déjà faites par
+  l'utilisateur.
+- **Défis volontairement exclus** lors de la curation (pour référence si
+  on nous redemande d'en ajouter depuis une liste similaire) : demandes
+  ciblées par genre (ex: demander un tampon hygiénique), appeler un
+  numéro de téléphone au hasard (dérange un inconnu), gifles/claques même
+  légères, "se faire insulter", lien vers un site web externe tiers,
+  utilisation du nom d'une vraie personnalité publique ou d'un titre de
+  chanson/mot sous droits (généricisés à la place, ex: "Patrick
+  Sébastien" → "une célébrité", "Baby Shark" → "une chanson entêtante
+  pour enfants").
+- Si on ajoute un nouveau lot de défis à l'avenir : créer
+  `EXTRA_MISSIONS_V4`, l'ajouter au `.concat()` du seed initial dans
+  `load()`, ET ajouter un bloc `if((state.missionBankVersion||1) < 4)`
+  qui pousse les nouveaux textes non déjà présents, puis mettre
+  `missionBankVersion` à jour en conséquence.
+
+---
+
+## 9. Historique des décisions et incidents (pour éviter de refaire les mêmes erreurs)
+
+- **Renommage du fichier principal** : le fichier a été renommé
+  `killer_maison_montagne.html` → `killer.html` par l'utilisateur sans
+  prévenir l'app. Ça a cassé `manifest.json` (`start_url`) et
+  `service-worker.js` (`ASSETS_TO_CACHE` + fallback offline), qui
+  pointaient encore vers `index.html`. **Leçon** : si le fichier
+  principal est renommé à nouveau, chercher toutes les occurrences du nom
+  de fichier dans `manifest.json` et `service-worker.js` et les mettre à
+  jour, et vérifier qu'un `index.html` de redirection existe toujours
+  pour que l'URL racine fonctionne.
+- **Stockage propre à chaque appareil** : `localStorage` n'est pas
+  partagé entre iPhone/iPad — d'où la fonctionnalité d'export/import
+  manuel (section Réglages). Il n'y a pas de synchronisation automatique
+  en temps réel entre appareils, et ce n'est pas prévu (pas de backend).
+- **Fonctionnalités proposées mais explicitement refusées par
+  l'utilisateur** (ne pas les réintroduire sans qu'il les demande) :
+  compteur "Jour X sur 9" / chronomètre de séjour, "Palmarès du séjour"
+  agrégeant plusieurs parties. Des idées de gameplay plus poussées
+  (rôles secrets, indices au lieu du nom, trêves aléatoires, immunité
+  votée, "dernier geste du fantôme", défis à niveaux de difficulté) ont
+  été proposées et **aucune n'a été retenue** — c'est le système de
+  "changement de défi contre 1 point de pénalité" qui a été implémenté à
+  la place.
+
+---
+
+## 10. Idées d'évolutions déjà identifiées mais non implémentées
+
+À ne proposer que si l'utilisateur les redemande explicitement :
+
+- Chrono / repère temporel du séjour (mis de côté par l'utilisateur).
+- Palmarès agrégé sur plusieurs parties (mis de côté par l'utilisateur).
+- Recherche/filtre dans le roster ou la banque de défis si elle continue
+  de grossir.
+- Chronomètre intégré pour les défis à contrainte de temps.
+- Un deuxième niveau d'annulation (historique complet plutôt qu'un seul
+  cran).
+- Pouvoir retirer un joueur d'une partie déjà lancée (actuellement
+  impossible, seul le retrait avant lancement est permis).
+
+---
+
+## 11. Check-list avant de livrer une modification
+
+1. Vérifier qu'aucun `id` HTML référencé en JS (`getElementById`) n'est
+   orphelin (script de vérif utilisé pendant le développement) :
+   ```
+   ids_used - ids_defined  # doit être vide (hors éléments créés dynamiquement : updateBanner, toastBanner, confirmBanner, confirmYes, confirmNo)
+   ```
+2. Utiliser `showConfirm()`/`showToast()`, jamais `confirm()`/`alert()`.
+3. Incrémenter `APP_VERSION` (killer.html) et `CACHE_VERSION`
+   (service-worker.js) à l'identique.
+4. Mettre à jour ce README si la modification change le comportement,
+   le modèle de données, la structure des fichiers, ou l'organisation
+   des onglets.
