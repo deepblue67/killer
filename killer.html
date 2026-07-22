@@ -222,6 +222,10 @@
   .guide-item summary::before{content:"▸ ";color:var(--pine);}
   .guide-item[open] summary::before{content:"▾ ";}
   .guide-item p{margin:8px 0 2px;font-size:.83rem;line-height:1.45;color:rgba(43,36,32,.8);}
+  .rules-h{font-weight:700;font-size:.85rem;margin:14px 0 4px;color:var(--ink);}
+  .rules-h:first-of-type{margin-top:2px;}
+  ul.rules-list, ol.rules-list{margin:0 0 4px;padding-left:20px;font-size:.83rem;line-height:1.5;color:rgba(43,36,32,.85);}
+  ul.rules-list li, ol.rules-list li{margin-bottom:2px;}
   .recap-item{border-bottom:1px solid rgba(43,36,32,.12);padding:9px 0;font-size:.85rem;line-height:1.4;}
   .recap-item:last-child{border-bottom:none;}
   .recap-item .rname{font-weight:700;}
@@ -309,7 +313,7 @@
       </details>
       <details class="guide-item">
         <summary>7. Journal et historique</summary>
-        <p>Le journal garde une trace de tout ce qui s'est passé dans la partie. Une fois une partie terminée, tu peux la rouvrir à tout moment depuis « Mes parties » pour consulter un récapitulatif complet : qui chassait qui, avec quel défi.</p>
+        <p>Le journal garde une trace de tout ce qui s'est passé dans la partie. Une fois une partie terminée, tu peux la rouvrir à tout moment depuis « Mes parties » pour consulter un récapitulatif complet : qui chassait qui, avec quel défi. Comme la Vue d'ensemble, cet onglet peut être protégé par le code PIN défini dans Réglages.</p>
       </details>
       <details class="guide-item">
         <summary>8. Mes données</summary>
@@ -331,12 +335,16 @@
       <div class="theme-grid" id="themeGrid"></div>
     </div>
     <div class="card">
-      <h2>Code PIN — Vue d'ensemble</h2>
-      <div class="hint" style="margin-bottom:10px;">Protège l'accès à l'onglet "Vue d'ensemble" (qui chasse qui), réservé à l'organisateur.</div>
+      <h2>Code PIN — Journal &amp; Vue d'ensemble</h2>
+      <div class="hint" style="margin-bottom:10px;">Protège l'accès aux onglets "Journal" et "Vue d'ensemble" (réservés à l'organisateur).</div>
       <div class="row">
         <input type="text" id="pinInput" placeholder="Code (4 chiffres min.)" inputmode="numeric" maxlength="8">
         <button class="btn btn-primary" id="savePinBtn">Enregistrer</button>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;margin:10px 0;">
+        <input type="checkbox" id="pinEnabledToggle" style="width:17px;height:17px;accent-color:var(--pine);">
+        Activer la protection par code PIN
+      </label>
       <div class="hint" id="pinStatus"></div>
       <button class="btn btn-ghost" id="clearPinBtn" style="margin-top:8px;">Retirer le code</button>
     </div>
@@ -354,6 +362,40 @@
     <div class="card">
       <h2>Version</h2>
       <div class="hint" id="versionDisplay"></div>
+    </div>
+    <div class="card">
+      <h2>📋 Résumé des règles (pour les joueurs)</h2>
+      <p class="rules-h">Le principe</p>
+      <ul class="rules-list">
+        <li>Chacun a une <strong>cible secrète</strong> à éliminer, tirée au hasard.</li>
+        <li>Éliminer sa cible = accomplir le <strong>défi</strong> imposé sur elle.</li>
+        <li>Une fois fait, on récupère la cible <strong>et</strong> le défi de la victime.</li>
+        <li>Dernier survivant = distinction spéciale, à part.</li>
+      </ul>
+      <p class="rules-h">Comment jouer</p>
+      <ol class="rules-list">
+        <li>Consulter sa mission → seul, en privé (l'écran se masque après 7 secondes).</li>
+        <li>Accomplir le défi sur sa cible.</li>
+        <li>Venir voir l'organisateur pour faire valider l'élimination.</li>
+      </ol>
+      <p class="rules-h">Le classement</p>
+      <ul class="rules-list">
+        <li>Score = éliminations réalisées − changements de défi.</li>
+        <li>Défi trop dur ? On peut en redemander un autre, mais <strong>-1 point</strong> à chaque fois, sans limite.</li>
+        <li>Le score peut être négatif.</li>
+      </ul>
+      <p class="rules-h">Les nouveaux arrivants</p>
+      <ul class="rules-list">
+        <li>Un joueur qui arrive plus tard est inséré directement dans la chaîne, avec sa propre cible et son défi.</li>
+      </ul>
+      <p class="rules-h">Zones interdites (sécurité)</p>
+      <ul class="rules-list">
+        <li>🏊 Piscine pendant la baignade</li>
+        <li>🛏️ Chambres et salles de bain, dans les deux maisons</li>
+        <li>🚗 En voiture / en conduisant</li>
+        <li>🌙 La nuit, une fois couchés</li>
+      </ul>
+      <p class="hint" style="margin-top:8px;">Tout le reste est un terrain de jeu. On perd avec le sourire, on élimine avec élégance. 🔪</p>
     </div>
   </section>
 
@@ -427,6 +469,15 @@
 
   <section id="tab-journal" style="display:none;">
     <div id="noActiveGameJournal" class="hint" style="padding:0 4px;">Ouvre ou crée une partie dans l'onglet Parties.</div>
+    <div class="card" id="journalLockScreen" style="display:none;">
+      <h2>Journal — accès protégé</h2>
+      <div class="hint" style="margin-bottom:10px;">Réservé à l'organisateur. Entre le code PIN pour continuer.</div>
+      <div class="row">
+        <input type="password" id="journalPinInput" placeholder="Code PIN" inputmode="numeric">
+        <button class="btn btn-primary" id="journalUnlockBtn">Déverrouiller</button>
+      </div>
+      <div class="hint" id="journalPinError" style="color:var(--blood);"></div>
+    </div>
     <div id="journalTabContent" style="display:none;">
       <div class="card" id="recapCard" style="display:none;">
         <h2>Récapitulatif complet</h2>
@@ -473,16 +524,17 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722181500';
+const APP_VERSION = '20260722184500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
+let journalUnlocked = false;
 
 let state = {
   roster: [], nextRosterId: 1,
   games: [], nextGameId: 1, nextPlayerSeq: 1,
   currentGameId: null,
   missionBank: [], nextMissionId: 0, missionBankVersion: 0,
-  theme: 'foret', pin: '', lastExportAt: null
+  theme: 'foret', pin: '', pinEnabled: true, lastExportAt: null
 };
 
 const DEFAULT_MISSIONS = [
@@ -814,6 +866,7 @@ function load(){
   }
   if(!state.theme) state.theme = 'foret';
   if(state.pin === undefined) state.pin = '';
+  if(state.pinEnabled === undefined) state.pinEnabled = true;
   applyTheme(state.theme);
   render();
 }
@@ -1164,9 +1217,16 @@ function renderReglagesTab(){
     </button>`;
   }).join('');
 
-  document.getElementById('pinStatus').textContent = state.pin
-    ? "Code défini. La vue d'ensemble est protégée."
-    : "Aucun code défini — la vue d'ensemble est accessible sans protection.";
+  document.getElementById('pinEnabledToggle').checked = !!state.pinEnabled;
+  let pinStatusText;
+  if(!state.pin){
+    pinStatusText = "Aucun code défini — Journal et Vue d'ensemble sont accessibles sans protection.";
+  } else if(!state.pinEnabled){
+    pinStatusText = "Code défini, mais protection désactivée — Journal et Vue d'ensemble sont accessibles sans code.";
+  } else {
+    pinStatusText = "Code défini et protection active sur Journal et Vue d'ensemble.";
+  }
+  document.getElementById('pinStatus').textContent = pinStatusText;
 
   document.getElementById('lastExportDisplay').textContent = `Dernier export : ${formatRelativeTime(state.lastExportAt)}`;
 
@@ -1325,8 +1385,11 @@ function computeBilan(game){
 function renderJournalTab(game){
   const has = !!game;
   document.getElementById('noActiveGameJournal').style.display = has ? 'none' : 'block';
-  document.getElementById('journalTabContent').style.display = has ? 'block' : 'none';
-  if(!has) return;
+  const journalProtected = has && state.pinEnabled && !!state.pin;
+  const journalLocked = journalProtected && !journalUnlocked;
+  document.getElementById('journalLockScreen').style.display = journalLocked ? 'block' : 'none';
+  document.getElementById('journalTabContent').style.display = (has && !journalLocked) ? 'block' : 'none';
+  if(!has || journalLocked) return;
   document.getElementById('journalGameTitle').textContent = `Journal — ${game.title}`;
   const logList = document.getElementById('logList');
   logList.innerHTML = game.log.map(l=>`<div class="log-entry"><strong>${l.ts}</strong> — ${l.text}</div>`).join('');
@@ -1388,9 +1451,11 @@ function buildChainSVG(players){
 function renderVueTab(game){
   const has = !!game;
   document.getElementById('vueNoGame').style.display = has ? 'none' : 'block';
-  document.getElementById('vueLockScreen').style.display = (has && !vueUnlocked) ? 'block' : 'none';
-  document.getElementById('vueContent').style.display = (has && vueUnlocked) ? 'block' : 'none';
-  if(!has || !vueUnlocked) return;
+  const vueProtected = has && state.pinEnabled && !!state.pin;
+  const vueLocked = vueProtected && !vueUnlocked;
+  document.getElementById('vueLockScreen').style.display = vueLocked ? 'block' : 'none';
+  document.getElementById('vueContent').style.display = (has && !vueLocked) ? 'block' : 'none';
+  if(!has || vueLocked) return;
 
   const alive = gameAlive(game);
   const orderedIds = [];
@@ -1429,6 +1494,12 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
       document.getElementById('vuePinInput').value = '';
       document.getElementById('vuePinError').textContent = '';
       renderVueTab(currentGame());
+    }
+    if(btn.dataset.tab === 'journal'){
+      journalUnlocked = false;
+      document.getElementById('journalPinInput').value = '';
+      document.getElementById('journalPinError').textContent = '';
+      renderJournalTab(currentGame());
     }
   });
 });
@@ -1597,8 +1668,12 @@ document.getElementById('savePinBtn').addEventListener('click', ()=>{
   save(); render();
   showToast('Code PIN enregistré.');
 });
+document.getElementById('pinEnabledToggle').addEventListener('change', e=>{
+  state.pinEnabled = e.target.checked;
+  save(); render();
+});
 document.getElementById('clearPinBtn').addEventListener('click', ()=>{
-  showConfirm("Retirer le code PIN ? La vue d'ensemble sera accessible sans protection.").then(ok=>{
+  showConfirm("Retirer le code PIN ? Journal et Vue d'ensemble seront accessibles sans protection.").then(ok=>{
     if(ok){
       state.pin = '';
       save(); render();
@@ -1655,7 +1730,9 @@ document.getElementById('importFileInput').addEventListener('change', (e)=>{
         state = imported;
         if(!state.theme) state.theme = 'foret';
         if(state.pin === undefined) state.pin = '';
+        if(state.pinEnabled === undefined) state.pinEnabled = true;
         vueUnlocked = false;
+        journalUnlocked = false;
         applyTheme(state.theme);
         save();
         render();
@@ -1683,6 +1760,22 @@ document.getElementById('vueUnlockBtn').addEventListener('click', ()=>{
 });
 document.getElementById('vuePinInput').addEventListener('keydown', e=>{
   if(e.key === 'Enter'){ document.getElementById('vueUnlockBtn').click(); }
+});
+
+// Journal — déverrouillage
+document.getElementById('journalUnlockBtn').addEventListener('click', ()=>{
+  const val = document.getElementById('journalPinInput').value;
+  if(!state.pin || val === state.pin){
+    journalUnlocked = true;
+    document.getElementById('journalPinInput').value = '';
+    document.getElementById('journalPinError').textContent = '';
+    renderJournalTab(currentGame());
+  } else {
+    document.getElementById('journalPinError').textContent = 'Code incorrect.';
+  }
+});
+document.getElementById('journalPinInput').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ document.getElementById('journalUnlockBtn').click(); }
 });
 
 // ---------- SERVICE WORKER (mises à jour) ----------

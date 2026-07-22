@@ -149,15 +149,38 @@ Vue d'ensemble → Réglages`
   parties terminées.
 - **Journal** : historique horodaté de la partie active, récapitulatif
   complet (qui chassait qui + défi) pour les parties terminées,
-  suppression de la partie.
+  suppression de la partie. Protégé par le même code PIN que "Vue
+  d'ensemble" (voir ci-dessous).
 - **Vue d'ensemble** : réservé à l'organisateur, protégé par code PIN
   (optionnel, défini dans Réglages). Se reverrouille à chaque fois qu'on
   quitte/rouvre l'onglet (jamais mémorisé). Affiche un schéma circulaire
   de la chaîne (le joueur `orderedPlayers[0]` est toujours en haut,
   sens horaire) + un tableau utilisant **le même ordre**.
-- **Réglages** : guide d'utilisation, roster, thème (10 choix), code PIN,
+- **Réglages** : guide d'utilisation, roster, thème (10 choix), code PIN
+  **+ interrupteur "Activer la protection"** (voir ci-dessous),
   synchronisation (export/import JSON avec Web Share API + fallback
-  téléchargement), rappel de dernier export, numéro de version.
+  téléchargement), rappel de dernier export, numéro de version, et un
+  **résumé statique des règles** (carte "📋 Résumé des règles") destiné à
+  être lu/relu par l'organisateur ou montré aux joueurs — contenu texte
+  fixe, pas de logique JS associée, à mettre à jour manuellement si les
+  règles changent (score, zones interdites, etc.).
+
+### Protection par code PIN (Journal + Vue d'ensemble)
+
+- `state.pin` (string) et `state.pinEnabled` (bool, défaut `true`) sont
+  deux champs indépendants. La protection n'est active que si **les
+  deux** conditions sont réunies : un code est défini ET l'interrupteur
+  est activé. Ça permet de garder un code enregistré tout en désactivant
+  temporairement la protection (ex: pendant un débrief où tout le monde
+  peut regarder).
+- Chaque onglet a son propre verrou **en mémoire uniquement** (jamais
+  persisté) : `vueUnlocked` et `journalUnlocked`. Se déverrouiller sur
+  l'un ne déverrouille pas l'autre, et les deux se reverrouillent à
+  chaque fois qu'on quitte puis rouvre l'onglet correspondant (géré dans
+  le gestionnaire de clic de la nav, pas dans `render()`).
+- Si un troisième onglet protégé était ajouté un jour, suivre le même
+  patron : un flag `xxxUnlocked` dédié, un lock screen dédié dans le
+  HTML, et le reset dans le handler de clic de nav.
 
 ---
 
