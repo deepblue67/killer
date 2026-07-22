@@ -215,14 +215,20 @@ Vue d'ensemble → Défis → Réglages`
   quitte/rouvre l'onglet (jamais mémorisé). Affiche un schéma circulaire
   de la chaîne (le joueur `orderedPlayers[0]` est toujours en haut,
   sens horaire) + un tableau utilisant **le même ordre**.
-- **Réglages** : guide d'utilisation, roster, thème (10 choix), code PIN
-  **+ interrupteur "Activer la protection"** (voir ci-dessous),
-  synchronisation (export/import JSON avec Web Share API + fallback
-  téléchargement), rappel de dernier export, numéro de version, et un
-  **résumé statique des règles** (carte "📋 Résumé des règles") destiné à
-  être lu/relu par l'organisateur ou montré aux joueurs — contenu texte
-  fixe, pas de logique JS associée, à mettre à jour manuellement si les
-  règles changent (score, zones interdites, etc.).
+- **Réglages** : cartes affichées dans cet ordre — Guide d'utilisation,
+  Résumé des règles (juste après le guide), Roster, Thème (10 choix),
+  Code PIN **+ interrupteur "Activer la protection"** (voir ci-dessous),
+  Synchronisation (export/import JSON avec Web Share API + fallback
+  téléchargement, rappel de dernier export), Version. Toutes ces cartes
+  sont **pliables/dépliables** : un clic sur le `<h2>` d'une carte
+  ajoute/retire la classe `.collapsed` sur son `.card` parent (scopé à
+  `#tab-reglages .card > h2` uniquement — les cartes des autres onglets
+  ne sont pas concernées). Le titre reste toujours visible, seul le
+  contenu se masque via `#tab-reglages .card.collapsed > *:not(h2)`.
+  État non persisté : tout redevient déplié au rechargement de la page.
+  Le "📋 Résumé des règles" reste un contenu statique — pas de logique
+  JS associée, à mettre à jour manuellement si les règles changent
+  (score, zones interdites, etc.).
 
 ### Protection par code PIN (Journal + Vue d'ensemble)
 

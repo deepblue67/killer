@@ -109,6 +109,23 @@
     margin:0 0 12px;
     letter-spacing:.5px;
   }
+  #tab-reglages .card > h2{
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    user-select:none;
+  }
+  #tab-reglages .card > h2::after{
+    content:"▾";
+    font-size:.8rem;
+    color:var(--pine);
+    margin-left:8px;
+    transition:transform .15s;
+  }
+  #tab-reglages .card.collapsed > h2{margin-bottom:0;}
+  #tab-reglages .card.collapsed > h2::after{transform:rotate(-90deg);}
+  #tab-reglages .card.collapsed > *:not(h2){display:none;}
   .row{display:flex;gap:8px;margin-bottom:10px;}
   input[type=text], select{
     flex:1;
@@ -407,6 +424,40 @@
       </details>
     </div>
     <div class="card">
+      <h2>📋 Résumé des règles (pour les joueurs)</h2>
+      <p class="rules-h">Le principe</p>
+      <ul class="rules-list">
+        <li>Chacun a une <strong>cible secrète</strong> à éliminer, tirée au hasard.</li>
+        <li>Éliminer sa cible = accomplir le <strong>défi</strong> imposé sur elle.</li>
+        <li>Une fois fait, on récupère la cible <strong>et</strong> le défi de la victime.</li>
+        <li>Dernier survivant = distinction spéciale, à part.</li>
+      </ul>
+      <p class="rules-h">Comment jouer</p>
+      <ol class="rules-list">
+        <li>Consulter sa mission → seul, en privé (l'écran se masque après 10 secondes).</li>
+        <li>Accomplir le défi sur sa cible.</li>
+        <li>Venir voir l'organisateur pour faire valider l'élimination.</li>
+      </ol>
+      <p class="rules-h">Le classement</p>
+      <ul class="rules-list">
+        <li>Score = éliminations réalisées − changements de défi.</li>
+        <li>Défi trop dur ? On peut en redemander un autre, mais <strong>-1 point</strong> à chaque fois, sans limite.</li>
+        <li>Le score peut être négatif.</li>
+      </ul>
+      <p class="rules-h">Les nouveaux arrivants</p>
+      <ul class="rules-list">
+        <li>Un joueur qui arrive plus tard est inséré directement dans la chaîne, avec sa propre cible et son défi.</li>
+      </ul>
+      <p class="rules-h">Zones interdites (sécurité)</p>
+      <ul class="rules-list">
+        <li>🏊 Piscine pendant la baignade</li>
+        <li>🛏️ Chambres et salles de bain, dans les deux maisons</li>
+        <li>🚗 En voiture / en conduisant</li>
+        <li>🌙 La nuit, une fois couchés</li>
+      </ul>
+      <p class="hint" style="margin-top:8px;">Tout le reste est un terrain de jeu. On perd avec le sourire, on élimine avec élégance. 🔪</p>
+    </div>
+    <div class="card">
       <h2>Roster des joueurs</h2>
       <div class="hint" style="margin-bottom:10px;">La liste globale de joueurs, dans laquelle tu piocheras pour créer chaque partie.</div>
       <div class="row">
@@ -448,40 +499,6 @@
     <div class="card">
       <h2>Version</h2>
       <div class="hint" id="versionDisplay"></div>
-    </div>
-    <div class="card">
-      <h2>📋 Résumé des règles (pour les joueurs)</h2>
-      <p class="rules-h">Le principe</p>
-      <ul class="rules-list">
-        <li>Chacun a une <strong>cible secrète</strong> à éliminer, tirée au hasard.</li>
-        <li>Éliminer sa cible = accomplir le <strong>défi</strong> imposé sur elle.</li>
-        <li>Une fois fait, on récupère la cible <strong>et</strong> le défi de la victime.</li>
-        <li>Dernier survivant = distinction spéciale, à part.</li>
-      </ul>
-      <p class="rules-h">Comment jouer</p>
-      <ol class="rules-list">
-        <li>Consulter sa mission → seul, en privé (l'écran se masque après 7 secondes).</li>
-        <li>Accomplir le défi sur sa cible.</li>
-        <li>Venir voir l'organisateur pour faire valider l'élimination.</li>
-      </ol>
-      <p class="rules-h">Le classement</p>
-      <ul class="rules-list">
-        <li>Score = éliminations réalisées − changements de défi.</li>
-        <li>Défi trop dur ? On peut en redemander un autre, mais <strong>-1 point</strong> à chaque fois, sans limite.</li>
-        <li>Le score peut être négatif.</li>
-      </ul>
-      <p class="rules-h">Les nouveaux arrivants</p>
-      <ul class="rules-list">
-        <li>Un joueur qui arrive plus tard est inséré directement dans la chaîne, avec sa propre cible et son défi.</li>
-      </ul>
-      <p class="rules-h">Zones interdites (sécurité)</p>
-      <ul class="rules-list">
-        <li>🏊 Piscine pendant la baignade</li>
-        <li>🛏️ Chambres et salles de bain, dans les deux maisons</li>
-        <li>🚗 En voiture / en conduisant</li>
-        <li>🌙 La nuit, une fois couchés</li>
-      </ul>
-      <p class="hint" style="margin-top:8px;">Tout le reste est un terrain de jeu. On perd avec le sourire, on élimine avec élégance. 🔪</p>
     </div>
   </section>
 
@@ -614,7 +631,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722205000';
+const APP_VERSION = '20260722210000';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -2012,6 +2029,13 @@ function updateOnlineStatus(){
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
+
+// ---------- CARTES PLIABLES (onglet Réglages) ----------
+document.querySelectorAll('#tab-reglages .card > h2').forEach(h2=>{
+  h2.addEventListener('click', ()=>{
+    h2.closest('.card').classList.toggle('collapsed');
+  });
+});
 
 load();
 </script>
