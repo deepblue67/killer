@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dossier Killer</title>
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Killer">
+<meta name="theme-color" content="#1f2e28">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -56,22 +65,27 @@
   }
   nav.tabs{
     display:flex;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
+    overflow-x:auto;
     gap:6px;
     margin:20px 0 16px;
     background:var(--pine-deep);
     border-radius:10px;
     padding:5px;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
   }
+  nav.tabs::-webkit-scrollbar{display:none;}
   nav.tabs button{
-    flex:1 1 30%;
+    flex:0 0 auto;
+    white-space:nowrap;
     background:transparent;
     border:none;
     color:rgba(232,220,196,.6);
     font-family:'Inter',sans-serif;
     font-weight:600;
-    font-size:.74rem;
-    padding:9px 4px;
+    font-size:.78rem;
+    padding:9px 14px;
     border-radius:7px;
     cursor:pointer;
     transition:.15s;
@@ -222,13 +236,13 @@
   <div class="status" id="statusBar"></div>
 
   <nav class="tabs">
-    <button data-tab="parties" class="active">Parties</button>
-    <button data-tab="reglages">Réglages</button>
-    <button data-tab="defis">Défis</button>
-    <button data-tab="mission">Ma mission</button>
-    <button data-tab="eliminer">Éliminer</button>
-    <button data-tab="classement">Classement</button>
-    <button data-tab="journal">Journal</button>
+    <button data-tab="parties" class="active">🎮 Parties</button>
+    <button data-tab="reglages">⚙️ Réglages</button>
+    <button data-tab="defis">🎯 Défis</button>
+    <button data-tab="mission">📜 Ma mission</button>
+    <button data-tab="eliminer">🔪 Éliminer</button>
+    <button data-tab="classement">🏆 Classement</button>
+    <button data-tab="journal">📖 Journal</button>
   </nav>
 
   <section id="tab-parties">
@@ -354,11 +368,12 @@
       <div id="noActiveGameEliminer" class="hint">Ouvre ou crée une partie dans l'onglet Parties.</div>
       <div id="eliminerTabContent" style="display:none;">
         <h2>Valider une élimination</h2>
+        <div class="hint" style="margin-bottom:6px;">Qui vient d'éliminer sa cible ?</div>
         <div class="row">
           <select id="killerSelect"></select>
         </div>
         <div class="hint" id="victimHint" style="margin-bottom:10px;"></div>
-        <button class="btn btn-danger" id="killBtn" disabled>Valider l'élimination 🪦</button>
+        <button class="btn btn-danger" id="killBtn" disabled>Valider l'élimination</button>
       </div>
     </div>
   </section>
@@ -398,7 +413,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722135643';
+const APP_VERSION = '20260722144500';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let state = {
   roster: [], nextRosterId: 1,
@@ -881,13 +896,15 @@ function updateVictimHint(game){
   const a = gameAlive(game);
   if(!game.started || a.length < 2){
     hint.textContent = "Lance d'abord la partie avec au moins 3 joueurs.";
+    killBtn.textContent = "Valider l'élimination";
     killBtn.disabled = true;
     return;
   }
   const killerId = killerSelect.value;
   const victimId = game.targets[killerId];
   const victim = gameById(game, victimId);
-  hint.textContent = victim ? `Cible actuelle : ${victim.name}` : '';
+  hint.textContent = victim ? `Sa cible : ${victim.name}` : '';
+  killBtn.textContent = victim ? `Valider l'élimination de ${victim.name} 🪦` : "Valider l'élimination";
   killBtn.disabled = !victim || a.length===1;
 }
 
