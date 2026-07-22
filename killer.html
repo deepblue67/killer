@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dossier Killer — Maison de la Montagne</title>
+<title>Dossier Killer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -28,6 +28,7 @@
     font-family:'Inter',sans-serif;
     min-height:100vh;
     padding:24px 14px 60px;
+    transition:background .2s;
   }
   .app{max-width:640px;margin:0 auto;}
   header{
@@ -40,14 +41,9 @@
     font-family:'Special Elite',monospace;
     font-size:1.9rem;
     letter-spacing:2px;
-    margin:0 0 6px;
+    margin:0;
     color:var(--kraft);
     text-shadow:2px 2px 0 var(--shadow);
-  }
-  header p{
-    margin:0;
-    font-size:.85rem;
-    color:rgba(232,220,196,.75);
   }
   .status{
     display:flex;
@@ -60,6 +56,7 @@
   }
   nav.tabs{
     display:flex;
+    flex-wrap:wrap;
     gap:6px;
     margin:20px 0 16px;
     background:var(--pine-deep);
@@ -67,13 +64,13 @@
     padding:5px;
   }
   nav.tabs button{
-    flex:1;
+    flex:1 1 30%;
     background:transparent;
     border:none;
     color:rgba(232,220,196,.6);
     font-family:'Inter',sans-serif;
     font-weight:600;
-    font-size:.78rem;
+    font-size:.74rem;
     padding:9px 4px;
     border-radius:7px;
     cursor:pointer;
@@ -127,15 +124,17 @@
   ul.plist li{
     display:flex;justify-content:space-between;align-items:center;
     padding:8px 10px;border-bottom:1px solid rgba(43,36,32,.12);
-    font-size:.9rem;
+    font-size:.9rem;gap:8px;
   }
   ul.plist li:last-child{border-bottom:none;}
   .tag{
     font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:20px;
-    letter-spacing:.5px;text-transform:uppercase;
+    letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;
   }
   .tag-alive{background:var(--pine);color:var(--kraft);}
   .tag-dead{background:var(--blood);color:#fff;}
+  .tag-prep{background:var(--gold);color:var(--ink);}
+  .tag-active{background:var(--ink);color:var(--kraft);}
   .hint{font-size:.78rem;color:rgba(43,36,32,.65);margin-top:6px;line-height:1.4;}
   .mission-card{
     background:var(--pine-deep);
@@ -152,7 +151,7 @@
     color:var(--gold);
     margin:6px 0;
   }
-  .mission-card .method,.mission-card .bonus{font-size:.85rem;margin-top:6px;line-height:1.4;}
+  .mission-card .bonus{font-size:.85rem;margin-top:6px;line-height:1.4;}
   .stamp{
     display:inline-block;
     font-family:'Special Elite',monospace;
@@ -168,9 +167,7 @@
     font-size:.82rem;padding:7px 0;border-bottom:1px solid rgba(43,36,32,.12);
   }
   .log-entry:last-child{border-bottom:none;}
-  .winner{
-    text-align:center;padding:20px 0;
-  }
+  .winner{text-align:center;padding:20px 0;}
   .winner .stamp{font-size:1.5rem;}
   select:disabled{opacity:.6;}
   .empty{font-size:.85rem;color:rgba(43,36,32,.6);font-style:italic;}
@@ -184,46 +181,92 @@
   ul.mlist li.disabled span.mtext{opacity:.4;text-decoration:line-through;}
   ul.mlist input[type=checkbox]{margin-top:3px;flex-shrink:0;width:17px;height:17px;accent-color:var(--pine);}
   ul.mlist span.mtext{flex:1;}
-  ul.mlist button.mdel{
-    background:none;border:none;color:var(--blood);font-size:1.1rem;cursor:pointer;
+  ul.mlist button.mdel, ul.mlist button.medit{
+    background:none;border:none;font-size:1.05rem;cursor:pointer;
     padding:0 4px;flex-shrink:0;
   }
+  ul.mlist button.mdel{color:var(--blood);}
+  ul.mlist button.medit{color:var(--pine);}
+  ul.clist{list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;}
+  ul.clist li{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid rgba(43,36,32,.12);font-size:.88rem;}
+  ul.clist li:last-child{border-bottom:none;}
+  ul.clist input[type=checkbox]{width:16px;height:16px;accent-color:var(--pine);flex-shrink:0;}
+  .theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:10px;}
+  .theme-swatch{
+    border:2px solid rgba(43,36,32,.15);border-radius:10px;padding:10px;cursor:pointer;
+    text-align:left;font-family:'Inter',sans-serif;font-size:.76rem;font-weight:600;
+    color:var(--ink);background:#fff;
+  }
+  .theme-swatch.active{border-color:var(--pine);box-shadow:0 0 0 2px var(--pine) inset;}
+  .theme-dots{display:flex;gap:4px;margin-bottom:6px;}
+  .theme-dot{width:16px;height:16px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15);}
+  .badge-active{display:inline-block;font-size:.68rem;font-weight:700;color:var(--gold);margin-left:6px;}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <h1>🔒 DOSSIER KILLER</h1>
-    <p>Maison de la montagne — 9 jours, 2 maisons, une piscine, un seul survivant</p>
   </header>
   <div class="status" id="statusBar"></div>
 
   <nav class="tabs">
-    <button data-tab="joueurs" class="active">Joueurs</button>
+    <button data-tab="parties" class="active">Parties</button>
+    <button data-tab="reglages">Réglages</button>
     <button data-tab="defis">Défis</button>
     <button data-tab="mission">Ma mission</button>
     <button data-tab="eliminer">Éliminer</button>
+    <button data-tab="classement">Classement</button>
     <button data-tab="journal">Journal</button>
   </nav>
 
-  <section id="tab-joueurs">
+  <section id="tab-parties">
     <div class="card">
-      <h2>Ajouter un joueur</h2>
+      <h2>Créer une nouvelle partie</h2>
       <div class="row">
-        <input type="text" id="newName" placeholder="Prénom">
-        <button class="btn btn-primary" id="addBtn">Ajouter</button>
+        <input type="text" id="gameTitle" placeholder="Titre de la partie (ex: Semaine 1)">
       </div>
-      <div class="hint" id="addHint">Ajoute d'abord tes 13 premiers joueurs, puis lance la partie. Tu pourras ajouter les nouveaux arrivants (jour 4, jour 7) une fois la partie lancée — ils seront insérés automatiquement dans la chaîne.</div>
+      <div class="hint" id="rosterEmptyHint" style="display:none;">Ton roster est vide. Va d'abord ajouter des joueurs dans l'onglet Réglages.</div>
+      <ul class="clist" id="rosterCheckList"></ul>
+      <button class="btn btn-primary" id="createGameBtn" style="margin-top:12px;">Créer la partie</button>
+    </div>
+
+    <div class="card" id="activeGameCard" style="display:none;">
+      <h2 id="activeGameTitle"></h2>
+      <ul class="plist" id="activeGamePlayers"></ul>
+      <div class="row" style="margin-top:10px;">
+        <select id="rosterAddSelect"></select>
+        <button class="btn btn-ghost" id="rosterAddBtn">Ajouter à la partie</button>
+      </div>
+      <div class="hint" id="activeGameHint"></div>
+      <button class="btn btn-primary" id="startGameBtn" style="margin-top:10px;">Lancer la partie 🔫</button>
+    </div>
+
+    <div class="card">
+      <h2>Mes parties</h2>
+      <ul class="plist" id="gamesList"></ul>
+      <div class="empty" id="emptyGames">Aucune partie créée pour l'instant.</div>
+    </div>
+  </section>
+
+  <section id="tab-reglages" style="display:none;">
+    <div class="card">
+      <h2>Roster des joueurs</h2>
+      <div class="hint" style="margin-bottom:10px;">La liste globale de joueurs, dans laquelle tu piocheras pour créer chaque partie.</div>
+      <div class="row">
+        <input type="text" id="newRosterName" placeholder="Prénom">
+        <button class="btn btn-primary" id="addRosterBtn">Ajouter</button>
+      </div>
+      <ul class="plist" id="rosterMgmtList"></ul>
+      <div class="empty" id="emptyRoster">Aucun joueur dans le roster.</div>
     </div>
     <div class="card">
-      <h2>Liste des joueurs</h2>
-      <ul class="plist" id="playerList"></ul>
-      <div class="empty" id="emptyMsg">Aucun joueur pour l'instant.</div>
+      <h2>Thème de l'application</h2>
+      <div class="theme-grid" id="themeGrid"></div>
     </div>
-    <div class="card" id="startCard">
-      <h2>Lancer la partie</h2>
-      <div class="hint">Cela tire au sort une cible secrète pour chacun, en une seule grande chaîne (13 joueurs minimum conseillé, 3 minimum techniquement). Irréversible sans réinitialiser.</div>
-      <button class="btn btn-primary" id="startBtn" style="margin-top:10px;">Lancer la partie 🔫</button>
+    <div class="card">
+      <h2>Version</h2>
+      <div class="hint" id="versionDisplay"></div>
     </div>
   </section>
 
@@ -246,43 +289,70 @@
     <div class="card">
       <h2>Consulter ma mission</h2>
       <div class="hint" style="margin-bottom:10px;">⚠️ À regarder seul(e) ! Passe le téléphone en privé.</div>
-      <div class="row">
-        <select id="whoSelect"></select>
-        <button class="btn btn-ghost" id="revealBtn">Afficher</button>
+      <div id="noActiveGameMission" class="hint">Ouvre ou crée une partie dans l'onglet Parties.</div>
+      <div id="missionTabContent" style="display:none;">
+        <div class="row">
+          <select id="whoSelect"></select>
+          <button class="btn btn-ghost" id="revealBtn">Afficher</button>
+        </div>
+        <div id="missionResult"></div>
       </div>
-      <div id="missionResult"></div>
     </div>
   </section>
 
   <section id="tab-eliminer" style="display:none;">
     <div class="card">
-      <h2>Valider une élimination</h2>
-      <div class="row">
-        <select id="killerSelect"></select>
+      <div id="noActiveGameEliminer" class="hint">Ouvre ou crée une partie dans l'onglet Parties.</div>
+      <div id="eliminerTabContent" style="display:none;">
+        <h2>Valider une élimination</h2>
+        <div class="row">
+          <select id="killerSelect"></select>
+        </div>
+        <div class="hint" id="victimHint" style="margin-bottom:10px;"></div>
+        <button class="btn btn-danger" id="killBtn" disabled>Valider l'élimination 🪦</button>
       </div>
-      <div class="hint" id="victimHint" style="margin-bottom:10px;"></div>
-      <button class="btn btn-danger" id="killBtn" disabled>Valider l'élimination 🪦</button>
     </div>
-    <div class="card" id="winnerCard" style="display:none;"></div>
+  </section>
+
+  <section id="tab-classement" style="display:none;">
+    <div id="noActiveGameClassement" class="hint" style="padding:0 4px;">Ouvre ou crée une partie dans l'onglet Parties.</div>
+    <div id="classementTabContent" style="display:none;">
+      <div class="card" id="survivorCard" style="display:none;"></div>
+      <div class="card">
+        <h2>Classement par éliminations</h2>
+        <div class="hint" style="margin-bottom:10px;">Trié par nombre d'éliminations. En cas d'égalité, celui qui a survécu le plus longtemps passe devant.</div>
+        <ul class="plist" id="rankingList"></ul>
+      </div>
+    </div>
   </section>
 
   <section id="tab-journal" style="display:none;">
-    <div class="card">
-      <h2>Journal de la partie</h2>
-      <div id="logList"></div>
-      <div class="empty" id="emptyLog">Rien à signaler pour l'instant.</div>
-    </div>
-    <div class="card">
-      <h2>Réinitialiser</h2>
-      <div class="hint">Efface tout et repart de zéro (nouvelle partie).</div>
-      <button class="btn btn-danger" id="resetBtn" style="margin-top:10px;">Tout effacer</button>
+    <div id="noActiveGameJournal" class="hint" style="padding:0 4px;">Ouvre ou crée une partie dans l'onglet Parties.</div>
+    <div id="journalTabContent" style="display:none;">
+      <div class="card">
+        <h2 id="journalGameTitle">Journal de la partie</h2>
+        <div id="logList"></div>
+        <div class="empty" id="emptyLog">Rien à signaler pour l'instant.</div>
+      </div>
+      <div class="card">
+        <h2>Supprimer cette partie</h2>
+        <div class="hint">Efface définitivement cette partie (et son historique). Le roster et la banque de défis ne sont pas affectés.</div>
+        <button class="btn btn-danger" id="deleteGameBtn" style="margin-top:10px;">Supprimer cette partie</button>
+      </div>
     </div>
   </section>
 </div>
 
 <script>
-const STORAGE_KEY = 'killer-montagne-state-v1';
-let state = { players: [], targets: {}, log: [], nextId: 1, missionBank: [], nextMissionId: 0 };
+const APP_VERSION = '20260722134130';
+const STORAGE_KEY = 'killer-montagne-state-v2';
+let state = {
+  roster: [], nextRosterId: 1,
+  games: [], nextGameId: 1, nextPlayerSeq: 1,
+  currentGameId: null,
+  missionBank: [], nextMissionId: 0, missionBankVersion: 0,
+  theme: 'foret'
+};
 
 const DEFAULT_MISSIONS = [
   "Fais-la chanter en utilisant un objet insolite comme micro.",
@@ -370,7 +440,6 @@ const DEFAULT_MISSIONS = [
   "Trouve une personne du même signe astrologique que toi.",
   "Demande-lui 1€.",
   "Échange ta mission avec un autre participant.",
-  "Fais un selfie avec la personne.",
   "Fais-lui manger un aliment sans les mains.",
   "Fais-lui prononcer une réplique de film culte.",
   "Fais un check inventé en 3 mouvements avec elle.",
@@ -381,29 +450,101 @@ const DEFAULT_MISSIONS = [
   "Convaincs-la de sauter dans la piscine tout habillée."
 ];
 
+const EXTRA_MISSIONS_V2 = [
+  "Fais-lui dessiner ton portrait en moins d'une minute.",
+  "Fais-lui deviner ton film préféré en 3 indices maximum.",
+  "Fais-lui porter tes chaussures pendant 10 minutes.",
+  "Fais-lui réciter la table de multiplication par 7.",
+  "Fais-lui donner son avis sur une question people totalement inventée.",
+  "Fais-lui faire un discours improvisé de 30 secondes sur un sujet absurde.",
+  "Fais-lui deviner ton âge exact, à voix haute.",
+  "Fais-lui te coiffer, le temps d'un instant.",
+  "Fais-lui commander un plat imaginaire au restaurant, à voix haute.",
+  "Fais-lui te masser les épaules pendant 20 secondes.",
+  "Fais-lui deviner un objet caché dans ta main.",
+  "Fais-lui répéter un virelangue sans se tromper.",
+  "Fais-lui écrire son prénom à l'envers, rapidement.",
+  "Fais-lui te donner un surnom qu'elle devra utiliser le reste de la journée.",
+  "Fais-lui applaudir sans raison au milieu d'une conversation.",
+  "Fais-lui compter jusqu'à 20 en mimant les gestes d'un sport.",
+  "Fais-lui raconter ton horoscope du jour, inventé sur le moment.",
+  "Fais-la marcher à reculons sur quelques mètres.",
+  "Fais-lui deviner le prix d'un objet de la maison.",
+  "Fais-lui te confier un secret inventé sur elle-même.",
+  "Fais-lui te faire un compliment dans une autre langue.",
+  "Fais-lui poser pour une photo façon couverture d'album.",
+  "Fais-lui inventer un slogan publicitaire pour un objet du quotidien.",
+  "Fais-lui deviner un pays à partir d'un indice culinaire.",
+  "Fais-lui te céder son dessert ou sa part préférée du repas.",
+  "Fais-lui te raconter un rêve qu'elle a fait récemment.",
+  "Fais-lui te faire une déclaration façon discours de mariage.",
+  "Fais-lui deviner combien de temps tu peux tenir en apnée, chrono à l'appui.",
+  "Fais-lui poster une story avec toi dedans.",
+  "Fais-lui t'apprendre un mot dans une langue qu'elle connaît et que tu ne connais pas."
+];
+
+const THEMES = {
+  foret:     { name:"Forêt & Kraft",    pine:"#1f2e28", pineDeep:"#16211c", kraft:"#e8dcc4", kraftDark:"#dccfae", ink:"#2b2420", blood:"#a8342f", bloodDark:"#7d2723", gold:"#c9a227" },
+  nuit:      { name:"Nuit étoilée",     pine:"#1b2035", pineDeep:"#12162a", kraft:"#e7e4f5", kraftDark:"#d6d2ec", ink:"#241f38", blood:"#7c4dff", bloodDark:"#5c34c9", gold:"#c9b037" },
+  coucher:   { name:"Coucher de soleil",pine:"#5c2a1e", pineDeep:"#3f1c14", kraft:"#fbe4cf", kraftDark:"#f3d3b3", ink:"#3a2317", blood:"#d9622b", bloodDark:"#a8481d", gold:"#e0a63a" },
+  neon:      { name:"Néon rétro",       pine:"#0d0d10", pineDeep:"#000000", kraft:"#1a1a22", kraftDark:"#26262f", ink:"#f2f2f2", blood:"#ff2f92", bloodDark:"#c21f6f", gold:"#39e5ff" },
+  plage:     { name:"Plage & piscine",  pine:"#0e7c86", pineDeep:"#0a5960", kraft:"#fdf3e0", kraftDark:"#f7e4bf", ink:"#1c3a3d", blood:"#ff6f59", bloodDark:"#d94f3c", gold:"#f2b134" },
+  spy:       { name:"Sang & or",        pine:"#111111", pineDeep:"#000000", kraft:"#ece6d8", kraftDark:"#ddd4bd", ink:"#1a1a1a", blood:"#8b0000", bloodDark:"#5c0000", gold:"#d4af37" },
+  pastel:    { name:"Pastel doux",      pine:"#7c9885", pineDeep:"#5f7a68", kraft:"#fdf1f5", kraftDark:"#f7dde7", ink:"#4a3b45", blood:"#e07a9b", bloodDark:"#c15c7d", gold:"#c9a66b" },
+  cabane:    { name:"Cabane en bois",   pine:"#3e2f23", pineDeep:"#2a1f17", kraft:"#ead9bb", kraftDark:"#ddc79f", ink:"#2b2016", blood:"#a1421b", bloodDark:"#7a3014", gold:"#8a9a5b" },
+  glacier:   { name:"Glacier",          pine:"#25425c", pineDeep:"#1a2f42", kraft:"#eef6fa", kraftDark:"#dcedf5", ink:"#1c2e3a", blood:"#3a7ca5", bloodDark:"#2a5c7d", gold:"#9fb8c9" },
+  halloween: { name:"Halloween",        pine:"#1a0f26", pineDeep:"#100819", kraft:"#f2d7a3", kraftDark:"#e6be76", ink:"#241428", blood:"#ff7518", bloodDark:"#c9590c", gold:"#8b3fc9" }
+};
+
+function applyTheme(key){
+  const t = THEMES[key] || THEMES.foret;
+  const root = document.documentElement.style;
+  root.setProperty('--pine', t.pine);
+  root.setProperty('--pine-deep', t.pineDeep);
+  root.setProperty('--kraft', t.kraft);
+  root.setProperty('--kraft-dark', t.kraftDark);
+  root.setProperty('--ink', t.ink);
+  root.setProperty('--blood', t.blood);
+  root.setProperty('--blood-dark', t.bloodDark);
+  root.setProperty('--gold', t.gold);
+}
+
+function nowStr(){
+  return new Date().toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
 function save(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   catch(e){ console.error('Erreur de sauvegarde', e); }
 }
+
 function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){ state = JSON.parse(raw); }
   }catch(e){ /* rien en stockage, on part de zéro */ }
   if(!state.missionBank || state.missionBank.length === 0){
-    state.missionBank = DEFAULT_MISSIONS.map((text,i)=>({id:'m'+i, text, enabled:true}));
-    state.nextMissionId = DEFAULT_MISSIONS.length;
+    const seed = DEFAULT_MISSIONS.concat(EXTRA_MISSIONS_V2);
+    state.missionBank = seed.map((text,i)=>({id:'m'+i, text, enabled:true}));
+    state.nextMissionId = seed.length;
+    state.missionBankVersion = 2;
+    save();
+  } else if((state.missionBankVersion||1) < 2){
+    EXTRA_MISSIONS_V2.forEach(text=>{
+      if(!state.missionBank.some(m=>m.text===text)){
+        const id = 'm'+(state.nextMissionId===undefined?state.missionBank.length:state.nextMissionId++);
+        state.missionBank.push({id, text, enabled:true});
+      }
+    });
+    state.missionBankVersion = 2;
     save();
   }
+  if(!state.theme) state.theme = 'foret';
+  applyTheme(state.theme);
   render();
 }
 
-function alive(){ return state.players.filter(p=>p.alive); }
-function byId(id){ return state.players.find(p=>p.id===id); }
-function gameStarted(){ return Object.keys(state.targets).length > 0; }
-function pushLog(text){
-  state.log.unshift({text, ts: new Date().toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})});
-}
+// ---------- MISSION BANK ----------
 function randomMission(){
   const pool = state.missionBank.filter(m=>m.enabled);
   if(pool.length === 0) return "Aucun défi disponible — coche-en dans la banque de défis !";
@@ -421,136 +562,306 @@ function toggleMission(id){
   if(m) m.enabled = !m.enabled;
   save(); render();
 }
+function editMission(id){
+  const m = state.missionBank.find(x=>x.id===id);
+  if(!m) return;
+  const newText = prompt('Modifier ce défi :', m.text);
+  if(newText === null) return;
+  const trimmed = newText.trim();
+  if(!trimmed) return;
+  m.text = trimmed;
+  save(); render();
+}
 function deleteMission(id){
   state.missionBank = state.missionBank.filter(x=>x.id!==id);
   save(); render();
 }
 
-function addPlayer(name){
+// ---------- ROSTER ----------
+function addRosterPlayer(name){
   name = name.trim();
   if(!name) return;
-  const id = 'p'+state.nextId++;
-  const mission = randomMission();
-  if(!gameStarted()){
-    state.players.push({id, name, alive:true, mission});
-    pushLog(`${name} rejoint la partie (pas encore lancée).`);
+  const id = 'r'+state.nextRosterId++;
+  state.roster.push({id, name});
+  save(); render();
+}
+function removeRosterPlayer(id){
+  state.roster = state.roster.filter(r=>r.id!==id);
+  save(); render();
+}
+
+// ---------- GAMES ----------
+function currentGame(){
+  return state.games.find(g=>g.id===state.currentGameId) || null;
+}
+function gameAlive(game){ return game.players.filter(p=>p.alive); }
+function gameById(game,id){ return game.players.find(p=>p.id===id); }
+function gameStatus(game){
+  if(!game.started) return 'prep';
+  if(gameAlive(game).length <= 1) return 'done';
+  return 'live';
+}
+
+function createGame(title, rosterIds){
+  title = title.trim();
+  if(!title) return;
+  const gid = 'g'+state.nextGameId++;
+  const players = rosterIds.map(rid=>{
+    const r = state.roster.find(x=>x.id===rid);
+    return { id:'p'+state.nextPlayerSeq++, name:r.name, alive:true, mission:randomMission(), kills:0 };
+  });
+  state.games.push({
+    id:gid, title, players, targets:{}, log:[{text:`Partie « ${title} » créée avec ${players.length} joueur(s).`, ts:nowStr()}],
+    eliminationCounter:0, started:false, createdAt:Date.now()
+  });
+  state.currentGameId = gid;
+  save(); render();
+}
+
+function deleteGame(gid){
+  state.games = state.games.filter(g=>g.id!==gid);
+  if(state.currentGameId === gid) state.currentGameId = null;
+  save(); render();
+}
+
+function addPlayerToGame(game, rosterId){
+  const r = state.roster.find(x=>x.id===rosterId);
+  if(!r) return;
+  const newPlayer = { id:'p'+state.nextPlayerSeq++, name:r.name, alive:true, mission:randomMission(), kills:0 };
+  if(!game.started){
+    game.players.push(newPlayer);
+    game.log.unshift({text:`${r.name} rejoint la partie « ${game.title} ».`, ts:nowStr()});
   } else {
-    const aliveIds = alive().map(p=>p.id);
-    if(aliveIds.length === 0){ state.players.push({id,name,alive:true,mission}); save(); render(); return; }
+    const aliveIds = gameAlive(game).map(p=>p.id);
+    if(aliveIds.length === 0){ game.players.push(newPlayer); save(); render(); return; }
     const a = aliveIds[Math.floor(Math.random()*aliveIds.length)];
-    const b = state.targets[a];
-    state.players.push({id, name, alive:true, mission});
-    state.targets[id] = b;
-    state.targets[a] = id;
-    pushLog(`${name} rejoint la partie en cours et est inséré(e) dans la chaîne.`);
+    const b = game.targets[a];
+    game.players.push(newPlayer);
+    game.targets[newPlayer.id] = b;
+    game.targets[a] = newPlayer.id;
+    game.log.unshift({text:`${r.name} rejoint la partie en cours et est inséré(e) dans la chaîne.`, ts:nowStr()});
   }
   save(); render();
 }
 
-function startGame(){
-  const ps = alive();
+function startGame(game){
+  const ps = gameAlive(game);
   if(ps.length < 3) return;
   const shuffled = [...ps].sort(()=>Math.random()-0.5);
-  state.targets = {};
+  game.targets = {};
   for(let i=0;i<shuffled.length;i++){
     const cur = shuffled[i];
     const next = shuffled[(i+1)%shuffled.length];
-    state.targets[cur.id] = next.id;
+    game.targets[cur.id] = next.id;
   }
-  pushLog(`La partie commence avec ${ps.length} joueurs. Que la traque commence !`);
+  game.started = true;
+  game.log.unshift({text:`La partie « ${game.title} » commence avec ${ps.length} joueurs. Que la traque commence !`, ts:nowStr()});
   save(); render();
 }
 
-function eliminate(killerId){
-  const victimId = state.targets[killerId];
+function eliminate(game, killerId){
+  const victimId = game.targets[killerId];
   if(!victimId) return;
-  const killer = byId(killerId), victim = byId(victimId);
-  state.targets[killerId] = state.targets[victimId];
-  delete state.targets[victimId];
+  const killer = gameById(game,killerId), victim = gameById(game,victimId);
+  game.targets[killerId] = game.targets[victimId];
+  delete game.targets[victimId];
   victim.alive = false;
-  pushLog(`${killer.name} élimine ${victim.name} et récupère sa mission.`);
-  save(); render();
-}
-
-function resetAll(){
-  state = { players: [], targets: {}, log: [], nextId: 1, missionBank: state.missionBank, nextMissionId: state.nextMissionId };
+  victim.eliminatedAt = ++game.eliminationCounter;
+  killer.kills = (killer.kills||0) + 1;
+  game.log.unshift({text:`${killer.name} élimine ${victim.name} et récupère sa mission. (${killer.kills} élimination${killer.kills>1?'s':''} pour ${killer.name})`, ts:nowStr()});
   save(); render();
 }
 
 // ---------- RENDER ----------
 function render(){
-  const a = alive();
-  const total = state.players.length;
-  document.getElementById('statusBar').innerHTML =
-    gameStarted()
-      ? `⚔️ EN COURS · ${a.length} vivant(s) / ${total}`
-      : `📋 PRÉPARATION · ${total} joueur(s) inscrit(s)`;
+  const game = currentGame();
 
-  // players list
-  const plist = document.getElementById('playerList');
-  plist.innerHTML = '';
-  document.getElementById('emptyMsg').style.display = total ? 'none' : 'block';
-  state.players.forEach(p=>{
-    const li = document.createElement('li');
-    li.innerHTML = `<span>${p.name}</span><span class="tag ${p.alive?'tag-alive':'tag-dead'}">${p.alive?'Vivant':'Éliminé'}</span>`;
-    plist.appendChild(li);
-  });
-
-  // start card
-  document.getElementById('startCard').style.display = gameStarted() ? 'none' : 'block';
-  document.getElementById('startBtn').disabled = a.length < 3;
-  document.getElementById('addHint').textContent = gameStarted()
-    ? "Partie en cours : tout nouveau joueur sera automatiquement inséré dans la chaîne de missions existante."
-    : "Ajoute d'abord tes premiers joueurs, puis lance la partie. Les prochains arrivants (jour 4, jour 7) pourront être ajoutés plus tard.";
-
-  // mission tab select
-  const whoSelect = document.getElementById('whoSelect');
-  whoSelect.innerHTML = a.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  document.getElementById('missionResult').innerHTML = '';
-
-  // eliminer tab
-  const killerSelect = document.getElementById('killerSelect');
-  killerSelect.innerHTML = a.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  updateVictimHint();
-
-  document.getElementById('winnerCard').style.display = 'none';
-  if(gameStarted() && a.length === 1){
-    document.getElementById('winnerCard').style.display = 'block';
-    document.getElementById('winnerCard').innerHTML = `<div class="winner"><div class="stamp">🏆 VAINQUEUR</div><h2 style="margin-top:10px;">${a[0].name}</h2></div>`;
-    document.getElementById('killBtn').disabled = true;
+  // status bar
+  if(game){
+    const a = gameAlive(game);
+    document.getElementById('statusBar').innerHTML = !game.started
+      ? `📋 « ${game.title} » · préparation · ${game.players.length} joueur(s)`
+      : `⚔️ « ${game.title} » · ${a.length} vivant(s) / ${game.players.length}`;
+  } else {
+    document.getElementById('statusBar').innerHTML = `Aucune partie active`;
   }
 
-  // mission bank
+  renderPartiesTab(game);
+  renderReglagesTab();
+  renderDefisTab();
+  renderMissionTab(game);
+  renderEliminerTab(game);
+  renderClassementTab(game);
+  renderJournalTab(game);
+}
+
+function renderPartiesTab(game){
+  // roster checklist for new game creation
+  const rosterCheckList = document.getElementById('rosterCheckList');
+  document.getElementById('rosterEmptyHint').style.display = state.roster.length ? 'none' : 'block';
+  rosterCheckList.innerHTML = state.roster.map(r=>`
+    <li><input type="checkbox" class="rcheck" value="${r.id}"> <span>${r.name}</span></li>
+  `).join('');
+
+  // active game card
+  const activeCard = document.getElementById('activeGameCard');
+  if(game){
+    activeCard.style.display = 'block';
+    document.getElementById('activeGameTitle').textContent = `Partie active : ${game.title}`;
+    const list = document.getElementById('activeGamePlayers');
+    list.innerHTML = game.players.map(p=>`
+      <li><span>${p.name}</span><span class="tag ${p.alive?'tag-alive':'tag-dead'}">${p.alive?'Vivant':'Éliminé'}</span></li>
+    `).join('');
+    const inGameIds = game.players.map(p=>p.name);
+    const available = state.roster.filter(r=>!game.players.some(p=>p.name===r.name));
+    const rosterAddSelect = document.getElementById('rosterAddSelect');
+    rosterAddSelect.innerHTML = available.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+    document.getElementById('rosterAddBtn').disabled = available.length===0;
+    const a = gameAlive(game);
+    document.getElementById('startGameBtn').style.display = game.started ? 'none' : 'inline-block';
+    document.getElementById('startGameBtn').disabled = a.length < 3;
+    document.getElementById('activeGameHint').textContent = game.started
+      ? "Partie en cours : tout nouveau joueur ajouté sera inséré automatiquement dans la chaîne de missions."
+      : "Ajoute les joueurs souhaités depuis le roster, puis lance la partie (3 joueurs minimum).";
+  } else {
+    activeCard.style.display = 'none';
+  }
+
+  // games list
+  const gamesList = document.getElementById('gamesList');
+  document.getElementById('emptyGames').style.display = state.games.length ? 'none' : 'block';
+  gamesList.innerHTML = [...state.games].reverse().map(g=>{
+    const status = gameStatus(g);
+    const a = gameAlive(g);
+    let statusLabel, statusClass;
+    if(status==='prep'){ statusLabel='Préparation'; statusClass='tag-prep'; }
+    else if(status==='done'){ statusLabel = a.length===1 ? `Terminée — ${a[0].name}` : 'Terminée'; statusClass='tag-dead'; }
+    else { statusLabel = `En cours (${a.length}/${g.players.length})`; statusClass='tag-alive'; }
+    const isActive = g.id === state.currentGameId;
+    return `<li>
+      <span>${g.title}${isActive?'<span class="badge-active">● active</span>':''}</span>
+      <span style="display:flex;gap:6px;align-items:center;">
+        <span class="tag ${statusClass}">${statusLabel}</span>
+        <button class="btn btn-ghost" data-open="${g.id}" style="padding:5px 9px;font-size:.72rem;">Ouvrir</button>
+        <button class="mdel" data-delgame="${g.id}" title="Supprimer" style="color:var(--blood);background:none;border:none;font-size:1rem;cursor:pointer;">✕</button>
+      </span>
+    </li>`;
+  }).join('');
+}
+
+function renderReglagesTab(){
+  const rosterMgmtList = document.getElementById('rosterMgmtList');
+  document.getElementById('emptyRoster').style.display = state.roster.length ? 'none' : 'block';
+  rosterMgmtList.innerHTML = state.roster.map(r=>`
+    <li><span>${r.name}</span><button class="mdel" data-delroster="${r.id}" style="color:var(--blood);background:none;border:none;font-size:1rem;cursor:pointer;">✕</button></li>
+  `).join('');
+
+  const themeGrid = document.getElementById('themeGrid');
+  themeGrid.innerHTML = Object.keys(THEMES).map(key=>{
+    const t = THEMES[key];
+    const active = state.theme === key;
+    return `<button class="theme-swatch ${active?'active':''}" data-theme="${key}">
+      <span class="theme-dots">
+        <span class="theme-dot" style="background:${t.pine}"></span>
+        <span class="theme-dot" style="background:${t.kraft}"></span>
+        <span class="theme-dot" style="background:${t.gold}"></span>
+      </span>
+      ${t.name}
+    </button>`;
+  }).join('');
+
+  document.getElementById('versionDisplay').textContent = `Version ${APP_VERSION}`;
+}
+
+function renderDefisTab(){
   const mlist = document.getElementById('missionList');
   mlist.innerHTML = state.missionBank.map(m=>`
     <li class="${m.enabled?'':'disabled'}">
       <input type="checkbox" data-id="${m.id}" class="mtoggle" ${m.enabled?'checked':''}>
       <span class="mtext">${m.text}</span>
+      <button class="medit" data-id="${m.id}" title="Modifier">✎</button>
       <button class="mdel" data-id="${m.id}" title="Supprimer">✕</button>
     </li>
   `).join('');
-
-  // journal
-  const logList = document.getElementById('logList');
-  logList.innerHTML = state.log.map(l=>`<div class="log-entry"><strong>${l.ts}</strong> — ${l.text}</div>`).join('');
-  document.getElementById('emptyLog').style.display = state.log.length ? 'none':'block';
 }
 
-function updateVictimHint(){
+function renderMissionTab(game){
+  const has = !!game;
+  document.getElementById('noActiveGameMission').style.display = has ? 'none' : 'block';
+  document.getElementById('missionTabContent').style.display = has ? 'block' : 'none';
+  if(!has) return;
+  const a = gameAlive(game);
+  const whoSelect = document.getElementById('whoSelect');
+  whoSelect.innerHTML = a.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('missionResult').innerHTML = '';
+}
+
+function renderEliminerTab(game){
+  const has = !!game;
+  document.getElementById('noActiveGameEliminer').style.display = has ? 'none' : 'block';
+  document.getElementById('eliminerTabContent').style.display = has ? 'block' : 'none';
+  if(!has) return;
+  const a = gameAlive(game);
+  const killerSelect = document.getElementById('killerSelect');
+  killerSelect.innerHTML = a.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  updateVictimHint(game);
+}
+
+function updateVictimHint(game){
   const killerSelect = document.getElementById('killerSelect');
   const killBtn = document.getElementById('killBtn');
   const hint = document.getElementById('victimHint');
-  const a = alive();
-  if(!gameStarted() || a.length < 2){
+  const a = gameAlive(game);
+  if(!game.started || a.length < 2){
     hint.textContent = "Lance d'abord la partie avec au moins 3 joueurs.";
     killBtn.disabled = true;
     return;
   }
   const killerId = killerSelect.value;
-  const victimId = state.targets[killerId];
-  const victim = byId(victimId);
+  const victimId = game.targets[killerId];
+  const victim = gameById(game, victimId);
   hint.textContent = victim ? `Cible actuelle : ${victim.name}` : '';
   killBtn.disabled = !victim || a.length===1;
+}
+
+function renderClassementTab(game){
+  const has = !!game;
+  document.getElementById('noActiveGameClassement').style.display = has ? 'none' : 'block';
+  document.getElementById('classementTabContent').style.display = has ? 'block' : 'none';
+  if(!has) return;
+  const a = gameAlive(game);
+  const ranked = [...game.players].sort((x,y)=>{
+    const kx = x.kills||0, ky = y.kills||0;
+    if(ky !== kx) return ky - kx;
+    const xSurv = x.alive ? Infinity : (x.eliminatedAt||0);
+    const ySurv = y.alive ? Infinity : (y.eliminatedAt||0);
+    return ySurv - xSurv;
+  });
+  const rankingList = document.getElementById('rankingList');
+  rankingList.innerHTML = ranked.map((p,i)=>`
+    <li>
+      <span>#${i+1} ${p.name}</span>
+      <span class="tag ${p.alive?'tag-alive':'tag-dead'}">${p.kills||0} élimination${(p.kills||0)>1?'s':''}${p.alive?'':' · éliminé'}</span>
+    </li>
+  `).join('');
+  const survivorCard = document.getElementById('survivorCard');
+  if(game.started && a.length === 1){
+    survivorCard.style.display = 'block';
+    survivorCard.innerHTML = `<div class="winner"><div class="stamp">🏆 DERNIER SURVIVANT</div><h2 style="margin-top:10px;">${a[0].name}</h2><div class="hint">Une distinction à part, indépendante du classement par éliminations ci-dessous.</div></div>`;
+  } else {
+    survivorCard.style.display = 'none';
+  }
+}
+
+function renderJournalTab(game){
+  const has = !!game;
+  document.getElementById('noActiveGameJournal').style.display = has ? 'none' : 'block';
+  document.getElementById('journalTabContent').style.display = has ? 'block' : 'none';
+  if(!has) return;
+  document.getElementById('journalGameTitle').textContent = `Journal — ${game.title}`;
+  const logList = document.getElementById('logList');
+  logList.innerHTML = game.log.map(l=>`<div class="log-entry"><strong>${l.ts}</strong> — ${l.text}</div>`).join('');
+  document.getElementById('emptyLog').style.display = game.log.length ? 'none':'block';
 }
 
 // ---------- EVENTS ----------
@@ -558,40 +869,60 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    ['joueurs','defis','mission','eliminer','journal'].forEach(t=>{
+    ['parties','reglages','defis','mission','eliminer','classement','journal'].forEach(t=>{
       document.getElementById('tab-'+t).style.display = (t===btn.dataset.tab) ? 'block' : 'none';
     });
   });
 });
 
-document.getElementById('addBtn').addEventListener('click', ()=>{
-  const input = document.getElementById('newName');
-  addPlayer(input.value);
+// Parties tab
+document.getElementById('createGameBtn').addEventListener('click', ()=>{
+  const title = document.getElementById('gameTitle').value;
+  const ids = [...document.querySelectorAll('#rosterCheckList .rcheck:checked')].map(c=>c.value);
+  if(!title.trim()){ alert('Donne un titre à la partie.'); return; }
+  createGame(title, ids);
+  document.getElementById('gameTitle').value = '';
+});
+document.getElementById('rosterAddBtn').addEventListener('click', ()=>{
+  const game = currentGame();
+  if(!game) return;
+  const rid = document.getElementById('rosterAddSelect').value;
+  if(rid) addPlayerToGame(game, rid);
+});
+document.getElementById('startGameBtn').addEventListener('click', ()=>{
+  const game = currentGame();
+  if(game) startGame(game);
+});
+document.getElementById('gamesList').addEventListener('click', e=>{
+  if(e.target.dataset.open){ state.currentGameId = e.target.dataset.open; save(); render(); }
+  if(e.target.dataset.delgame){
+    if(confirm('Supprimer définitivement cette partie ?')) deleteGame(e.target.dataset.delgame);
+  }
+});
+
+// Réglages tab
+document.getElementById('addRosterBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('newRosterName');
+  addRosterPlayer(input.value);
   input.value = '';
 });
-document.getElementById('newName').addEventListener('keydown', e=>{
-  if(e.key === 'Enter'){ document.getElementById('addBtn').click(); }
+document.getElementById('newRosterName').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ document.getElementById('addRosterBtn').click(); }
 });
-document.getElementById('startBtn').addEventListener('click', startGame);
-
-document.getElementById('revealBtn').addEventListener('click', ()=>{
-  const id = document.getElementById('whoSelect').value;
-  const p = byId(id);
-  const targetId = state.targets[id];
-  const target = byId(targetId);
-  const box = document.getElementById('missionResult');
-  if(!target){ box.innerHTML = `<div class="hint">Pas de mission trouvée.</div>`; return; }
-  box.innerHTML = `
-    <div class="mission-card">
-      <div>Ta cible, ${p.name}...</div>
-      <div class="target">${target.name}</div>
-      <div class="bonus">🎯 Ta mission : ${p.mission || ''}</div>
-    </div>
-  `;
-  clearTimeout(window._hideTimer);
-  window._hideTimer = setTimeout(()=>{ box.innerHTML = '<div class="hint">Mission masquée. Redemande à ton tour !</div>'; }, 7000);
+document.getElementById('rosterMgmtList').addEventListener('click', e=>{
+  if(e.target.dataset.delroster){
+    if(confirm('Retirer ce joueur du roster ? (les parties déjà créées ne sont pas affectées)')) removeRosterPlayer(e.target.dataset.delroster);
+  }
+});
+document.getElementById('themeGrid').addEventListener('click', e=>{
+  const btn = e.target.closest('.theme-swatch');
+  if(!btn) return;
+  state.theme = btn.dataset.theme;
+  applyTheme(state.theme);
+  save(); render();
 });
 
+// Défis tab
 document.getElementById('addMissionBtn').addEventListener('click', ()=>{
   const input = document.getElementById('newMission');
   addMissionToBank(input.value);
@@ -607,16 +938,84 @@ document.getElementById('missionList').addEventListener('click', e=>{
   if(e.target.classList.contains('mdel')){
     if(confirm('Supprimer ce défi de la banque ?')) deleteMission(e.target.dataset.id);
   }
+  if(e.target.classList.contains('medit')){
+    editMission(e.target.dataset.id);
+  }
 });
 
-document.getElementById('killerSelect').addEventListener('change', updateVictimHint);
+// Ma mission tab
+document.getElementById('revealBtn').addEventListener('click', ()=>{
+  const game = currentGame();
+  if(!game) return;
+  const id = document.getElementById('whoSelect').value;
+  const p = gameById(game, id);
+  const targetId = game.targets[id];
+  const target = gameById(game, targetId);
+  const box = document.getElementById('missionResult');
+  if(!target){ box.innerHTML = `<div class="hint">Pas de mission trouvée (la partie a-t-elle été lancée ?).</div>`; return; }
+  box.innerHTML = `
+    <div class="mission-card">
+      <div>Ta cible, ${p.name}...</div>
+      <div class="target">${target.name}</div>
+      <div class="bonus">🎯 Ta mission : ${p.mission || ''}</div>
+    </div>
+  `;
+  clearTimeout(window._hideTimer);
+  window._hideTimer = setTimeout(()=>{ box.innerHTML = '<div class="hint">Mission masquée. Redemande à ton tour !</div>'; }, 7000);
+});
+
+// Éliminer tab
+document.getElementById('killerSelect').addEventListener('change', ()=>{
+  const game = currentGame();
+  if(game) updateVictimHint(game);
+});
 document.getElementById('killBtn').addEventListener('click', ()=>{
+  const game = currentGame();
+  if(!game) return;
   const killerId = document.getElementById('killerSelect').value;
-  eliminate(killerId);
+  eliminate(game, killerId);
 });
-document.getElementById('resetBtn').addEventListener('click', ()=>{
-  if(confirm('Tout effacer et repartir de zéro ?')) resetAll();
+
+// Journal tab
+document.getElementById('deleteGameBtn').addEventListener('click', ()=>{
+  const game = currentGame();
+  if(!game) return;
+  if(confirm(`Supprimer définitivement la partie « ${game.title} » ?`)) deleteGame(game.id);
 });
+
+// ---------- SERVICE WORKER (mises à jour) ----------
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./service-worker.js').then(reg=>{
+      reg.addEventListener('updatefound', ()=>{
+        const newWorker = reg.installing;
+        if(!newWorker) return;
+        newWorker.addEventListener('statechange', ()=>{
+          if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
+            showUpdateBanner(reg);
+          }
+        });
+      });
+    }).catch(err=>console.warn('Échec de l\'enregistrement du service worker :', err));
+  });
+  let refreshingPage = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(refreshingPage) return;
+    refreshingPage = true;
+    window.location.reload();
+  });
+}
+function showUpdateBanner(reg){
+  if(document.getElementById('updateBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.style.cssText = "position:fixed;bottom:0;left:0;right:0;background:var(--gold);color:var(--ink);padding:13px;text-align:center;font-family:'Inter',sans-serif;font-weight:700;font-size:.85rem;z-index:9999;cursor:pointer;box-shadow:0 -4px 14px rgba(0,0,0,.3);";
+  banner.textContent = "🔄 Nouvelle version disponible — touche ici pour mettre à jour";
+  banner.addEventListener('click', ()=>{
+    if(reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+  });
+  document.body.appendChild(banner);
+}
 
 load();
 </script>
