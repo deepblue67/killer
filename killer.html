@@ -242,6 +242,7 @@
     <button data-tab="eliminer">🔪 Éliminer</button>
     <button data-tab="classement">🏆 Classement</button>
     <button data-tab="journal">📖 Journal</button>
+    <button data-tab="vue">🕵️ Vue d'ensemble</button>
     <button data-tab="reglages">⚙️ Réglages</button>
   </nav>
 
@@ -329,6 +330,16 @@
       <div class="theme-grid" id="themeGrid"></div>
     </div>
     <div class="card">
+      <h2>Code PIN — Vue d'ensemble</h2>
+      <div class="hint" style="margin-bottom:10px;">Protège l'accès à l'onglet "Vue d'ensemble" (qui chasse qui), réservé à l'organisateur.</div>
+      <div class="row">
+        <input type="text" id="pinInput" placeholder="Code (4 chiffres min.)" inputmode="numeric" maxlength="8">
+        <button class="btn btn-primary" id="savePinBtn">Enregistrer</button>
+      </div>
+      <div class="hint" id="pinStatus"></div>
+      <button class="btn btn-ghost" id="clearPinBtn" style="margin-top:8px;">Retirer le code</button>
+    </div>
+    <div class="card">
       <h2>Version</h2>
       <div class="hint" id="versionDisplay"></div>
     </div>
@@ -412,17 +423,44 @@
       </div>
     </div>
   </section>
+
+  <section id="tab-vue" style="display:none;">
+    <div class="card">
+      <h2>Vue d'ensemble — qui chasse qui</h2>
+      <div id="vueNoGame" class="hint" style="display:none;">Ouvre ou crée une partie dans l'onglet Parties.</div>
+      <div id="vueLockScreen" style="display:none;">
+        <div class="hint" style="margin-bottom:10px;">Réservé à l'organisateur. Entre le code PIN pour continuer.</div>
+        <div class="row">
+          <input type="password" id="vuePinInput" placeholder="Code PIN" inputmode="numeric">
+          <button class="btn btn-primary" id="vueUnlockBtn">Déverrouiller</button>
+        </div>
+        <div class="hint" id="vuePinError" style="color:var(--blood);"></div>
+      </div>
+    </div>
+    <div id="vueContent" style="display:none;">
+      <div class="card">
+        <h2>Schéma de la chaîne</h2>
+        <div id="vueDiagram"></div>
+      </div>
+      <div class="card">
+        <h2>Tableau complet</h2>
+        <div id="vueTable"></div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <script>
-const APP_VERSION = '20260722161500';
+const APP_VERSION = '20260722163000';
 const STORAGE_KEY = 'killer-montagne-state-v2';
+let vueUnlocked = false;
+
 let state = {
   roster: [], nextRosterId: 1,
   games: [], nextGameId: 1, nextPlayerSeq: 1,
   currentGameId: null,
   missionBank: [], nextMissionId: 0, missionBankVersion: 0,
-  theme: 'foret'
+  theme: 'foret', pin: ''
 };
 
 const DEFAULT_MISSIONS = [
@@ -615,6 +653,7 @@ function load(){
     save();
   }
   if(!state.theme) state.theme = 'foret';
+  if(state.pin === undefined) state.pin = '';
   applyTheme(state.theme);
   render();
 }
@@ -808,6 +847,7 @@ function render(){
   renderEliminerTab(game);
   renderClassementTab(game);
   renderJournalTab(game);
+  renderVueTab(game);
 }
 
 function renderPartiesTab(game){
@@ -893,6 +933,10 @@ function renderReglagesTab(){
       ${t.name}
     </button>`;
   }).join('');
+
+  document.getElementById('pinStatus').textContent = state.pin
+    ? "Code défini. La vue d'ensemble est protégée."
+    : "Aucun code défini — la vue d'ensemble est accessible sans protection.";
 
   document.getElementById('versionDisplay').textContent = `Version ${APP_VERSION}`;
 }
@@ -1010,14 +1054,86 @@ function renderJournalTab(game){
   }
 }
 
+function shortName(n){
+  return n.length > 11 ? n.slice(0,10)+'…' : n;
+}
+
+function buildChainSVG(players){
+  const n = players.length;
+  if(n === 0) return '<div class="hint">Personne en vie.</div>';
+  const size = 320;
+  const cx = size/2, cy = size/2, R = size/2 - 46;
+  const pts = players.map((p,i)=>{
+    const angle = (i/n)*2*Math.PI - Math.PI/2;
+    return { x: cx + R*Math.cos(angle), y: cy + R*Math.sin(angle), name:p.name };
+  });
+  let arrows = '';
+  for(let i=0;i<n;i++){
+    const a = pts[i], b = pts[(i+1)%n];
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const dist=Math.sqrt(dx*dx+dy*dy) || 1;
+    const ux=dx/dist, uy=dy/dist;
+    const startX=a.x+ux*24, startY=a.y+uy*24;
+    const endX=b.x-ux*24, endY=b.y-uy*24;
+    arrows += `<line x1="${startX.toFixed(1)}" y1="${startY.toFixed(1)}" x2="${endX.toFixed(1)}" y2="${endY.toFixed(1)}" stroke="var(--blood)" stroke-width="2" marker-end="url(#vuearrow)"/>`;
+  }
+  let nodes = '';
+  pts.forEach(p=>{
+    nodes += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="22" fill="var(--kraft)" stroke="var(--pine)" stroke-width="2"/>`;
+    nodes += `<text x="${p.x.toFixed(1)}" y="${(p.y+4).toFixed(1)}" text-anchor="middle" font-size="9" font-family="Inter, sans-serif" fill="var(--ink)">${shortName(p.name)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${size} ${size}" style="width:100%;height:auto;">
+    <defs><marker id="vuearrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="var(--blood)"/></marker></defs>
+    ${arrows}
+    ${nodes}
+  </svg>`;
+}
+
+function renderVueTab(game){
+  const has = !!game;
+  document.getElementById('vueNoGame').style.display = has ? 'none' : 'block';
+  document.getElementById('vueLockScreen').style.display = (has && !vueUnlocked) ? 'block' : 'none';
+  document.getElementById('vueContent').style.display = (has && vueUnlocked) ? 'block' : 'none';
+  if(!has || !vueUnlocked) return;
+
+  const alive = gameAlive(game);
+  const orderedIds = [];
+  if(alive.length){
+    let cur = alive[0].id;
+    const seen = new Set();
+    while(cur && !seen.has(cur)){
+      seen.add(cur);
+      orderedIds.push(cur);
+      cur = game.targets[cur];
+    }
+  }
+  const orderedPlayers = orderedIds.map(id=>gameById(game,id)).filter(Boolean);
+  document.getElementById('vueDiagram').innerHTML = buildChainSVG(orderedPlayers);
+
+  const table = document.getElementById('vueTable');
+  table.innerHTML = byName(alive).map(p=>{
+    const target = gameById(game, game.targets[p.id]);
+    return `<div class="recap-item">
+      <span class="rname">${p.name}</span> chasse <span class="rtarget">${target ? target.name : '—'}</span><br>
+      <span class="hint" style="margin:0;">Défi : ${p.mission || '—'}</span>
+    </div>`;
+  }).join('');
+}
+
 // ---------- EVENTS ----------
 document.querySelectorAll('nav.tabs button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    ['parties','mission','defis','eliminer','classement','journal','reglages'].forEach(t=>{
+    ['parties','mission','defis','eliminer','classement','journal','vue','reglages'].forEach(t=>{
       document.getElementById('tab-'+t).style.display = (t===btn.dataset.tab) ? 'block' : 'none';
     });
+    if(btn.dataset.tab === 'vue'){
+      vueUnlocked = false;
+      document.getElementById('vuePinInput').value = '';
+      document.getElementById('vuePinError').textContent = '';
+      renderVueTab(currentGame());
+    }
   });
 });
 
@@ -1134,6 +1250,37 @@ document.getElementById('deleteGameBtn').addEventListener('click', ()=>{
   const game = currentGame();
   if(!game) return;
   if(confirm(`Supprimer définitivement la partie « ${game.title} » ?`)) deleteGame(game.id);
+});
+
+// Réglages — code PIN
+document.getElementById('savePinBtn').addEventListener('click', ()=>{
+  const val = document.getElementById('pinInput').value.trim();
+  if(val.length < 4){ alert('Le code doit faire au moins 4 chiffres.'); return; }
+  state.pin = val;
+  document.getElementById('pinInput').value = '';
+  save(); render();
+});
+document.getElementById('clearPinBtn').addEventListener('click', ()=>{
+  if(confirm('Retirer le code PIN ? La vue d\'ensemble sera accessible sans protection.')){
+    state.pin = '';
+    save(); render();
+  }
+});
+
+// Vue d'ensemble — déverrouillage
+document.getElementById('vueUnlockBtn').addEventListener('click', ()=>{
+  const val = document.getElementById('vuePinInput').value;
+  if(!state.pin || val === state.pin){
+    vueUnlocked = true;
+    document.getElementById('vuePinInput').value = '';
+    document.getElementById('vuePinError').textContent = '';
+    renderVueTab(currentGame());
+  } else {
+    document.getElementById('vuePinError').textContent = 'Code incorrect.';
+  }
+});
+document.getElementById('vuePinInput').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ document.getElementById('vueUnlockBtn').click(); }
 });
 
 // ---------- SERVICE WORKER (mises à jour) ----------
