@@ -157,9 +157,15 @@ avec les amis avant le séjour :
   affiche "—" si aucune partie n'est ouverte).
 - Compte à rebours en direct (jours/heures/min/sec) jusqu'à
   `COUNTDOWN_TARGET = new Date(2026, 7, 1, 12, 0, 0)` (samedi 1er août
-  2026, midi, heure locale de l'appareil). Mis à jour chaque seconde via
+  2026, midi, heure locale de l'appareil), précédé du texte "Début de la
+  Killer Party dans" (`#cdAboveLabel`). Mis à jour chaque seconde via
   `setInterval`, démarré à l'ouverture et arrêté à la fermeture pour ne
-  pas tourner inutilement en arrière-plan.
+  pas tourner inutilement en arrière-plan. **Une fois l'échéance
+  dépassée**, `#cdAboveLabel` se masque, les mêmes compteurs repartent
+  en comptage croissant (temps écoulé depuis la cible) et le texte sous
+  le compteur devient dynamique : *"Killer party commencé il y a X
+  jours, Y heures, Z minutes et W secondes."* au lieu de "Que la traque
+  commence".
 - Couleurs **volontairement figées** (hex en dur : `#16211c`, `#e8dcc4`,
   `#a8342f`, `#c9a227`), indépendantes du thème actuellement sélectionné
   dans Réglages — c'est un visuel de communication fixe, pas un élément

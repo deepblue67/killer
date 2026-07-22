@@ -277,11 +277,15 @@
     display:block;font-family:'Special Elite',monospace;font-size:2.8rem;
     margin-top:14px;color:#e8dcc4;
   }
-  .cd-timer{display:flex;gap:8px;margin-top:36px;width:100%;}
+  .cd-above{
+    margin-top:36px;font-family:'Special Elite',monospace;font-size:.85rem;
+    color:#e8dcc4;letter-spacing:1px;
+  }
+  .cd-timer{display:flex;gap:8px;margin-top:10px;width:100%;}
   .cd-timer .unit{background:#e8dcc4;color:#16211c;border-radius:8px;padding:12px 6px;flex:1;}
   .cd-timer .n{font-family:'Special Elite',monospace;font-size:1.7rem;}
   .cd-timer .l{font-size:.6rem;letter-spacing:1px;text-transform:uppercase;opacity:.7;}
-  .cd-tag{margin-top:30px;font-family:'Special Elite',monospace;font-size:.75rem;color:#c9a227;letter-spacing:1px;}
+  .cd-tag{margin-top:30px;font-family:'Special Elite',monospace;font-size:.75rem;color:#c9a227;letter-spacing:1px;line-height:1.6;max-width:300px;}
   .guide-item{border-bottom:1px solid rgba(43,36,32,.12);padding:8px 0;}
   .guide-item:last-child{border-bottom:none;}
   .guide-item summary{cursor:pointer;font-weight:700;font-size:.88rem;list-style:none;}
@@ -316,8 +320,9 @@
         <div class="cd-stamp">JOUEURS ENCORE<br>EN VIE</div>
         <b id="cdAliveCount">—</b>
       </div>
+      <div class="cd-above" id="cdAboveLabel">Début de la Killer Party dans</div>
       <div class="cd-timer" id="cdTimer"></div>
-      <div class="cd-tag">Que la traque commence</div>
+      <div class="cd-tag" id="cdTag">Que la traque commence</div>
     </div>
   </div>
 
@@ -609,7 +614,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722201500';
+const APP_VERSION = '20260722203000';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -1957,9 +1962,13 @@ let countdownTimerId = null;
 
 function renderCountdown(){
   const el = document.getElementById('cdTimer');
+  const tagEl = document.getElementById('cdTag');
+  const aboveEl = document.getElementById('cdAboveLabel');
   if(!el) return;
   const now = new Date();
-  let diff = Math.max(0, COUNTDOWN_TARGET - now);
+  const rawDiff = COUNTDOWN_TARGET - now;
+  const isPast = rawDiff <= 0;
+  let diff = Math.abs(rawDiff);
   const d = Math.floor(diff/86400000); diff -= d*86400000;
   const h = Math.floor(diff/3600000); diff -= h*3600000;
   const m = Math.floor(diff/60000); diff -= m*60000;
@@ -1967,6 +1976,14 @@ function renderCountdown(){
   el.innerHTML = [[d,'Jours'],[h,'Heures'],[m,'Min'],[s,'Sec']]
     .map(([n,l])=>`<div class="unit"><div class="n">${String(n).padStart(2,'0')}</div><div class="l">${l}</div></div>`)
     .join('');
+  if(aboveEl){
+    aboveEl.style.display = isPast ? 'none' : 'block';
+  }
+  if(tagEl){
+    tagEl.textContent = isPast
+      ? `Killer party commencé il y a ${d} jour${d>1?'s':''}, ${h} heure${h>1?'s':''}, ${m} minute${m>1?'s':''} et ${s} seconde${s>1?'s':''}.`
+      : 'Que la traque commence';
+  }
 }
 
 function openCountdownPage(){
