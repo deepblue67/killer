@@ -254,38 +254,38 @@
     width:36px;height:36px;border-radius:50%;font-size:1.1rem;cursor:pointer;
   }
   .countdown-page{
-    width:100%;max-width:360px;text-align:center;
+    width:100%;max-width:400px;text-align:center;
     display:flex;flex-direction:column;align-items:center;
   }
   .countdown-page h1{
-    font-family:'Special Elite',monospace;font-size:1.7rem;color:#e8dcc4;
+    font-family:'Special Elite',monospace;font-size:2.3rem;color:#e8dcc4;
     letter-spacing:1px;margin:0;text-shadow:2px 2px 0 rgba(0,0,0,.4);
   }
   .cd-sub{
-    font-family:'Special Elite',monospace;font-size:.85rem;color:#c9a227;
-    margin-top:10px;border-top:1px dashed rgba(232,220,196,.3);
-    border-bottom:1px dashed rgba(232,220,196,.3);padding:8px 14px;
+    font-family:'Special Elite',monospace;font-size:1.15rem;color:#c9a227;
+    margin-top:14px;border-top:1px dashed rgba(232,220,196,.3);
+    border-bottom:1px dashed rgba(232,220,196,.3);padding:10px 14px;
     letter-spacing:2px;
   }
-  .cd-alive{margin-top:40px;}
+  .cd-alive{margin-top:44px;}
   .cd-stamp{
     display:inline-block;border:3px solid #a8342f;color:#a8342f;
-    font-family:'Special Elite',monospace;padding:10px 18px;border-radius:8px;
-    transform:rotate(-4deg);font-size:.85rem;letter-spacing:1px;line-height:1.4;
+    font-family:'Special Elite',monospace;padding:12px 22px;border-radius:8px;
+    transform:rotate(-4deg);font-size:1.15rem;letter-spacing:1px;line-height:1.4;
   }
   .cd-alive b{
-    display:block;font-family:'Special Elite',monospace;font-size:2.8rem;
-    margin-top:14px;color:#e8dcc4;
+    display:block;font-family:'Special Elite',monospace;font-size:3.6rem;
+    margin-top:16px;color:#e8dcc4;
   }
   .cd-above{
-    margin-top:36px;font-family:'Special Elite',monospace;font-size:.85rem;
+    margin-top:40px;font-family:'Special Elite',monospace;font-size:1.15rem;
     color:#e8dcc4;letter-spacing:1px;
   }
-  .cd-timer{display:flex;gap:8px;margin-top:10px;width:100%;}
-  .cd-timer .unit{background:#e8dcc4;color:#16211c;border-radius:8px;padding:12px 6px;flex:1;}
-  .cd-timer .n{font-family:'Special Elite',monospace;font-size:1.7rem;}
-  .cd-timer .l{font-size:.6rem;letter-spacing:1px;text-transform:uppercase;opacity:.7;}
-  .cd-tag{margin-top:30px;font-family:'Special Elite',monospace;font-size:.75rem;color:#c9a227;letter-spacing:1px;line-height:1.6;max-width:300px;}
+  .cd-timer{display:flex;gap:8px;margin-top:12px;width:100%;}
+  .cd-timer .unit{background:#e8dcc4;color:#16211c;border-radius:8px;padding:14px 6px;flex:1;}
+  .cd-timer .n{font-family:'Special Elite',monospace;font-size:2.3rem;}
+  .cd-timer .l{font-size:.8rem;letter-spacing:1px;text-transform:uppercase;opacity:.7;}
+  .cd-tag{margin-top:34px;font-family:'Special Elite',monospace;font-size:1rem;color:#c9a227;letter-spacing:1px;line-height:1.6;max-width:340px;}
   .guide-item{border-bottom:1px solid rgba(43,36,32,.12);padding:8px 0;}
   .guide-item:last-child{border-bottom:none;}
   .guide-item summary{cursor:pointer;font-weight:700;font-size:.88rem;list-style:none;}
@@ -315,7 +315,7 @@
     <button id="countdownCloseBtn" class="countdown-close">✕</button>
     <div class="countdown-page">
       <h1>🔒 DOSSIER KILLER</h1>
-      <div class="cd-sub">POISY BEACH 2026</div>
+      <div class="cd-sub" id="cdSub">POISY BEACH 2026</div>
       <div class="cd-alive">
         <div class="cd-stamp">JOUEURS ENCORE<br>EN VIE</div>
         <b id="cdAliveCount">—</b>
@@ -614,7 +614,7 @@
 </div>
 
 <script>
-const APP_VERSION = '20260722203000';
+const APP_VERSION = '20260722204000';
 const STORAGE_KEY = 'killer-montagne-state-v2';
 let vueUnlocked = false;
 let journalUnlocked = false;
@@ -1990,6 +1990,7 @@ function openCountdownPage(){
   const game = currentGame();
   const aliveCount = game ? gameAlive(game).length : null;
   document.getElementById('cdAliveCount').textContent = (aliveCount !== null) ? aliveCount : '—';
+  document.getElementById('cdSub').textContent = game ? game.title : 'Aucune partie en cours';
   document.getElementById('countdownOverlay').style.display = 'flex';
   renderCountdown();
   clearInterval(countdownTimerId);

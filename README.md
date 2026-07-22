@@ -151,7 +151,10 @@ Un clic sur le 🔒 dans le titre de l'en-tête ouvre un overlay plein écran
 (`#countdownOverlay`), pensé comme une page à partager/capturer d'écran
 avec les amis avant le séjour :
 
-- Titre "🔒 DOSSIER KILLER" / sous-titre "POISY BEACH 2026".
+- Titre "🔒 DOSSIER KILLER" / sous-titre `#cdSub` = **titre réel de la
+  partie active** (`currentGame().title`, ou "Aucune partie en cours" si
+  aucune n'est ouverte) — remplace l'ancien texte statique "POISY BEACH
+  2026".
 - Tampon "JOUEURS ENCORE EN VIE" + le nombre réel de joueurs vivants dans
   la partie actuellement active (`gameAlive(currentGame()).length`,
   affiche "—" si aucune partie n'est ouverte).
